@@ -40,8 +40,8 @@ If authoritative Dropbox material cannot be accessed, **stop before implementing
 - Inferred business requirements: `INF-<DOMAIN>-NNN`
 - Approved requirements: `REQ-<DOMAIN>-NNN`
 - Design decisions: `ADR-NNNN` (repo-local implementation decisions), with Dropbox link when business-significant.
-- Tests cite the relevant `REQ-...` where useful.
-- Delivery identifiers are canonical GitHub `#issue` and `#PR` numbers; don't invent parallel story IDs.
+- Tests cite the relevant `REQ-...` in test names or nearby comments; issues and PRs map each acceptance criterion to its test.
+- Delivery identifiers are canonical GitHub `#issue` and `#PR` numbers; don't invent parallel story IDs. Include `Refs #N` in commit bodies and `Closes #N` in PRs.
 
 Domains initially: `RES` reservations, `AVL` availability, `GUE` guest/CRM, `EXP` experiences, `VEN` vendors, `FIN` simulated finance/commissions, `OPS` operations, `SEC` security, `PLT` platform.
 

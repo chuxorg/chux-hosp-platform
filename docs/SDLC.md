@@ -53,7 +53,7 @@ Keep stories small enough to review without excessive context. Prefer vertical s
 - Developers/agents run `./scripts/validate.sh` before committing. A Git hook is optional local guard and **not** a substitute for CI.
 - Required CI on each PR: formatting/lint, static/type checks as relevant, unit tests, integration tests where appropriate, migration checks when schema changes, and secret/dependency scanning as the stack matures.
 - No code without automated tests appropriate to behavior; no unreviewed skipped tests, no misleading mocks as integration coverage. Failures block merge.
-- Prefer squash merge; one PR per story; owner approves merges. Document DB migration and rollback when relevant.
+- Prefer squash merge; one PR per story; owner authorizes merges; solo work does not require a separate approving review. Document DB migration and rollback when relevant.
 - CI checks are only enforceable when repository branch rules can require them. If branch protection is unavailable, owner must manually ensure green CI and PR review before merge.
 
 ## Initial bootstrap limitation
@@ -66,11 +66,24 @@ This repository initially has no selected application language/framework, and th
 - **GitHub Actions:** objective repeatable validation.
 - **GitHub Project:** work queue and state, not another requirements database.
 
-## Repository administration checklist (manual until supported)
-- [ ] Set merge strategy to squash preferred; avoid accidental direct merges if possible.
-- [ ] Require PR review to merge into master and required successful CI checks (where plan supports rulesets/branch protection).
-- [ ] Restrict force pushes and branch deletion of master.
-- [ ] Enable secret scanning/dependency alerts where available.
-- [ ] Enable automatic deletion of head branches after merge.
-- [ ] Configure Project 14 statuses and add repository issues.
+## Repository administration checklist
+- [x] Set merge strategy to squash preferred; avoid accidental direct merges if possible.
+- [x] Require PRs and successful `bootstrap-validation` on master; zero approving reviews for solo work.
+- [x] Restrict force pushes and branch deletion of master.
+- [x] Enable secret scanning/dependency alerts where available.
+- [x] Enable automatic deletion of head branches after merge.
+- [x] Configure Project 14 statuses and add repository issues.
 - [ ] Confirm which Dropbox documents are approved, and provide Codex with explicit accessible copies/links.
+
+## Verified repository controls (2026-11-14)
+- Active `master PR and quality gate` ruleset: PR required, zero approving reviews for solo development, resolve review conversations, required GitHub Actions `bootstrap-validation`, branch must be up to date, no force pushes or branch deletion, no bypass actors.
+- Squash is the only allowed merge method; PR title becomes commit title and PR body preserves issue/requirements/test links. CI validates Conventional Commit PR titles. Merged branches are deleted automatically.
+- Owner authorization is still required before an agent merges; a separate contributor approval is not required.
+- Local pre-commit hook must be installed per `LOCAL_SETUP.md`; CI is the remote gate. Local hooks can be bypassed and do not guarantee secret detection.
+- Application unit/integration tests remain Issue #3; bootstrap success proves only the documented checks. Replace/extend validation and required checks when the stack is selected.
+- Add `Refs #N` to commit bodies. Map approved REQ IDs and acceptance criteria to test names/comments and record test commands/results in the PR.
+
+## Project operating procedure
+Set the issue Status to In Progress when starting its branch. Keep draft implementation work In Progress; move to Review when the PR is ready and CI passes. After the owner authorizes merge, verify the linked issue closes and becomes Done. Reopened issues return to Backlog for triage. Check transitions explicitly until Project built-in workflow targets are verified in the settings UI. The API reports enabled workflows but does not expose their target settings.
+
+Project metadata: Priority P0–P3 (P0 highest), Domain RES/AVL/GUE/EXP/VEN/FIN/OPS/SEC/PLT, Phase Pilot/Later. Native issue Type uses organization issue types. Do not reinterpret these fields as approval of a stack or business requirement. Issue #4 tracks remaining setup/automation limitations.

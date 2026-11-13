@@ -1,6 +1,6 @@
 # Local development setup
 
-1. Clone the private repository and enter its root.
+1. Clone the repository and enter its root.
 2. Install the version-controlled pre-commit hook: `git config core.hooksPath .githooks`.
 3. Before each commit, run `bash scripts/validate.sh`. The hook will also invoke it on commit attempts.
 4. Keep GitHub Actions green on the PR. Do not bypass hooks or CI.
