@@ -8,7 +8,7 @@ Greenfield Hospitality platform with foundational PMS/CRM capabilities and an ex
 - [Codex instructions](AGENTS.md)
 - [SDLC](docs/SDLC.md)
 - [Local setup and tests](docs/LOCAL_SETUP.md)
-- [ADR-0001 proposed backend choice](docs/adr/ADR-0001-python-fastapi-postgres.md)
+- [ADR-0001 accepted backend decision](docs/adr/ADR-0001-python-fastapi-postgres.md)
 
 ## Backend bootstrap
 Python 3.13 + FastAPI, SQLAlchemy/Alembic, SQLite local and PostgreSQL deployment target. No PMS or Experience workflows implemented yet. Readiness endpoints: GET /healthz and GET /readyz.
