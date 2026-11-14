@@ -1,0 +1,44 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local IDE/system
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Dependency/build artifacts
+node_modules/
+vendor/
+dist/
+build/
+coverage/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Local databases and legacy backups — do not commit
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.sql
+*.sql.gz
+*.frm
+*.MYD
+*.MYI
+*.ibd
+ibdata*
+*.zip
+*.tar
+*.tar.gz
+*.bak
+legacy-source/
+legacy-db/

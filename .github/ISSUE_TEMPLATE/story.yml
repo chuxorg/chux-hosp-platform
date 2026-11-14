@@ -1,0 +1,40 @@
+name: Implementation story
+description: Approved, testable scope for one normally one-PR delivery
+title: "[STORY] "
+labels: []
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome / user value
+      description: What must be demonstrably different after this story?
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Approved requirements / evidence links
+      description: Link exact approved Dropbox document/version and REQ IDs. Label INF and LEG as unapproved context.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and test scenarios
+      description: Include positive, negative, boundary and failure cases.
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Implementation tasks
+      value: |
+        - [ ] Confirm source requirements and design
+        - [ ] Implement behavior and automated tests
+        - [ ] Run local validation
+        - [ ] Open draft PR and verify CI
+        - [ ] Address review and update documentation
+  - type: textarea
+    id: exclusions
+    attributes:
+      label: Out of scope / dependencies / questions
