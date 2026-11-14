@@ -27,7 +27,9 @@ docker compose up -d postgres
 export DATABASE_URL='postgresql+psycopg://hospitality:local_only_change_me@localhost:5432/hospitality'
 alembic upgrade head
 uvicorn hospitality.main:app --reload
-TEST_DATABASE_URL="$DATABASE_URL" python -m pytest -q -m integration
+# Create a separate database for destructive migration tests:
+docker compose exec postgres createdb -U hospitality hospitality_test
+TEST_DATABASE_URL='postgresql+psycopg://hospitality:local_only_change_me@localhost:5432/hospitality_test' python -m pytest -q -m integration
 ~~~
 
-These credentials are *localhost-only development examples*. Never deploy them publicly or reuse them in production. CI starts a fresh isolated PostgreSQL service. Application unit/integration tests must grow with each approved story.
+These credentials are localhost-only development examples. Never deploy them publicly or reuse them in production. CI starts a fresh isolated PostgreSQL service. Application unit/integration tests must grow with each approved story.

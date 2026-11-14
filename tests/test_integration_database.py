@@ -10,6 +10,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy import text
+from sqlalchemy.engine import make_url
 
 from hospitality.app import create_app
 from hospitality.db import make_engine
@@ -20,6 +21,12 @@ def migrated_db(tmp_path, monkeypatch):
     database_url = os.environ.get("TEST_DATABASE_URL") or (
         f"sqlite+pysqlite:///{tmp_path / 'integration.db'}"
     )
+    # Applying and downgrading Alembic migrations is destructive: never run against
+    # an application or production database by mistake.
+    if os.environ.get("TEST_DATABASE_URL") and not (
+        make_url(database_url).database or ""
+    ).endswith("_test"):
+        raise ValueError("TEST_DATABASE_URL must name a dedicated database ending in _test")
     monkeypatch.setenv("DATABASE_URL", database_url)
     config = Config("alembic.ini")
     command.upgrade(config, "head")
