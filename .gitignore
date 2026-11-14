@@ -13,15 +13,23 @@
 .idea/
 *.swp
 
+# Python
+.venv/
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+__pycache__/
+*.pyc
+
 # Dependency/build artifacts
 node_modules/
 vendor/
 dist/
 build/
 coverage/
-.pytest_cache/
-__pycache__/
-*.pyc
 
 # Local databases and legacy backups — do not commit
 *.sqlite

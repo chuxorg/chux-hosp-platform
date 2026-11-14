@@ -1,11 +1,33 @@
-# Local development setup
+# Local developer setup
 
-1. Clone the repository and enter its root.
-2. Install the version-controlled pre-commit hook: `git config core.hooksPath .githooks`.
-3. Before each commit, run `bash scripts/validate.sh`. The hook will also invoke it on commit attempts.
-4. Keep GitHub Actions green on the PR. Do not bypass hooks or CI.
-5. Refer to `AGENTS.md`, `docs/SDLC.md`, the approved requirements in Dropbox, and the linked story before coding.
+Use Python 3.13 and Git. Keep the legacy PHP/MyISAM archives and guest data outside this repository.
 
-**Important:** The bootstrap validator checks only repository policy. There are no application tests yet. When a technology stack is chosen, replace the bootstrap guard with actual lint/type/unit/integration commands and corresponding CI jobs **before** introducing application code.
+~~~bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+git config core.hooksPath .githooks
+bash scripts/validate.sh
+~~~
 
-Git hooks are local conveniences, not security controls: another machine or agent can skip them. GitHub CI provides objective verification, and protected-branch required checks provide enforceable merge gating when available for the organization plan.
+The validator runs Python compilation, pytest unit and real SQLite integration tests, Ruff lint and Ruff formatting. The pre-commit hook invokes the validator; install it per clone.
+
+To run the sample API with SQLite:
+
+~~~bash
+alembic upgrade head
+uvicorn hospitality.main:app --reload
+# GET http://127.0.0.1:8000/healthz and /readyz
+~~~
+
+Optional local PostgreSQL parity (Docker required):
+
+~~~bash
+docker compose up -d postgres
+export DATABASE_URL='postgresql+psycopg://hospitality:local_only_change_me@localhost:5432/hospitality'
+alembic upgrade head
+uvicorn hospitality.main:app --reload
+TEST_DATABASE_URL="$DATABASE_URL" python -m pytest -q -m integration
+~~~
+
+These credentials are *localhost-only development examples*. Never deploy them publicly or reuse them in production. CI starts a fresh isolated PostgreSQL service. Application unit/integration tests must grow with each approved story.
