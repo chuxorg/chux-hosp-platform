@@ -1,18 +1,25 @@
 # Hospitality Platform
 
-Greenfield Hospitality platform: foundational PMS/CRM capabilities and an extensible Experience layer, beginning with a small Thailand cooking experience pilot.
+Greenfield Hospitality platform with foundational PMS/CRM capabilities and an extensible Experience layer. Phase 1 is a small Thailand cooking pilot with simulated payments/commissions and no live integrations.
 
-## Project links
-
-- [GitHub Project #14](https://github.com/orgs/chuxorg/projects/14/)
+## Project references
+- [GitHub Project #14](https://github.com/orgs/chuxorg/projects/14)
 - [Dropbox Hospitality knowledge base](https://www.dropbox.com/home/Hospitality)
-- [Legacy PMS analysis](https://www.dropbox.com/home/Hospitality/07_Legacy_PMS)
-- [Development operating model](docs/SDLC.md) — added in the bootstrap PR
+- [Codex instructions](AGENTS.md)
+- [SDLC](docs/SDLC.md)
+- [Local setup and tests](docs/LOCAL_SETUP.md)
+- [ADR-0001 accepted backend decision](docs/adr/ADR-0001-python-fastapi-postgres.md)
 
-## Boundaries
+## Backend bootstrap
+Python 3.13 + FastAPI, SQLAlchemy/Alembic, SQLite local and PostgreSQL deployment target. No PMS or Experience workflows implemented yet. Readiness endpoints: GET /healthz and GET /readyz.
 
-The legacy PHP application and database are **reference material only**, not source dependencies. Do not commit legacy archives, raw database dumps, personal data, secrets, or credentials. The implementation will use a new technology stack, selected by an explicit architecture decision.
+~~~bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+bash scripts/validate.sh
+alembic upgrade head
+uvicorn hospitality.main:app --reload
+~~~
 
-Business knowledge and approved requirements live in Dropbox. GitHub Issues/Projects track delivery. This repository tracks implementation, tests, build tooling, and the instructions needed to execute it.
-
-> Bootstrap note: The initial README establishes `master`. Repository conventions, issue templates, CI, and Codex instructions are proposed via the first pull request.
+The quality workflow executes unit tests, SQLite integration, PostgreSQL integration, and lint/format checks. The bootstrap-validation required check aggregates both test jobs. Original PHP, DB and guest data must remain outside Git.
