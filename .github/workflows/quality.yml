@@ -13,8 +13,8 @@ jobs:
   sqlite-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - name: Install package and test dependencies
@@ -46,8 +46,8 @@ jobs:
     env:
       TEST_DATABASE_URL: postgresql+psycopg://hospitality:local_test_only@localhost:5432/hospitality_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
       - name: Install package and test dependencies
