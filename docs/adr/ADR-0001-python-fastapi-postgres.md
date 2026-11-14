@@ -1,6 +1,6 @@
 # ADR-0001: Python/FastAPI backend with portable relational persistence
 
-Status: Proposed for owner review in Issue #3  
+Status: Accepted — approved by project owner on 2026-11-14  
 Date: 2026-11-14  
 Owner: Hospitality project owner  
 Refs: Issue #3; REQ-PLT-001, REQ-PLT-002; Dropbox greenfield specification
@@ -13,7 +13,7 @@ We need a small greenfield PMS/CRM foundation and independent Experience layer, 
 2. Python/Django: mature ORM/admin, but more framework footprint than the pilot requires.
 3. Python/FastAPI + SQLAlchemy/Alembic: small typed API, test support, framework-independent domain layer, mature migrations and SQLite/PostgreSQL drivers.
 
-## Proposed decision
+## Accepted decision
 - Backend: Python 3.13, FastAPI, Pydantic, SQLAlchemy 2.x and Alembic; sync database access initially.
 - Database: SQLite for local isolated tests and optional local pilot, PostgreSQL for deployment; containerized PostgreSQL in CI and for local parity.
 - Package management: pyproject.toml, isolated venv; add a full transitive dependency lock before production.
