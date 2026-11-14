@@ -23,9 +23,9 @@ def migrated_db(tmp_path, monkeypatch):
     )
     # Applying and downgrading Alembic migrations is destructive: never run against
     # an application or production database by mistake.
-    if os.environ.get("TEST_DATABASE_URL") and not (
-        make_url(database_url).database or ""
-    ).endswith("_test"):
+    if os.environ.get("TEST_DATABASE_URL") and not (make_url(database_url).database or "").endswith(
+        "_test"
+    ):
         raise ValueError("TEST_DATABASE_URL must name a dedicated database ending in _test")
     monkeypatch.setenv("DATABASE_URL", database_url)
     config = Config("alembic.ini")
