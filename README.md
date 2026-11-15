@@ -22,6 +22,12 @@ No Experiences, Loyalty, Procurement or Operations module is required.
 Read [Module boundaries and composition](docs/MODULES.md) for checked dependency rules,
 data-ownership limitations and the next approved PMS implementation steps.
 
+## Configuration-driven hotel policies
+
+[ADR-0004](docs/adr/ADR-0004-configuration-driven-business-policies.md) records the owner-approved architecture: invariant correctness stays in tested Go/PostgreSQL, while hotel-specific business variations are validated, typed, module-owned configuration controlled by authorized hotel roles through future UI forms. There is **no** generic rules engine, and hotel staff will not write SQL/YAML.
+
+See the [policy design checklist](docs/POLICY_DESIGN_CHECKLIST.md) and [PMS policy discovery issue #39](https://github.com/chuxorg/chux-hosp-platform/issues/39). Rate-plan/market-segment eligibility and allotment rules have **not** been implemented or approved in the #23 basic-rate slice.
+
 ## PMS configuration (Issue #22)
 
 The first PMS business slice supports **Property → RoomType → individual Room** create/read/replace flows under `/pms/v1/`, using PostgreSQL-owned `pms_*` tables and domain/application/infrastructure/API boundaries. Apply migrations before issuing requests.

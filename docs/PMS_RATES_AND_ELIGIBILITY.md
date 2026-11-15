@@ -11,6 +11,19 @@
 - Dates are strict valid Gregorian `YYYY-MM-DD` **hotel calendar labels**, interpreted using the Property's configured IANA zone. They are not instants. Check-in is inclusive, checkout exclusive; require checkout later than check-in. Reject impossible dates, zero-night/reversed intervals and timestamps. No server/client time-zone conversion, elapsed-hours division, past-date, lead-time or maximum-stay policy.
 - **Results are configured inventory eligibility only.** `search_mode` is `inventory_eligibility`; `reservation_conflicts_checked` is always `false`. Candidate membership is date-independent for valid intervals because no reservation/hold/allocation model exists. Search creates no reservation, hold, lock or allocation and guarantees no future bookability. Issue #24 must define blocking states, reservation overlap and atomic allocation before those claims/tests are meaningful.
 
+## ADR-0004 terminology and scope
+
+Under [ADR-0004](adr/ADR-0004-configuration-driven-business-policies.md), this API returns **configured room candidates**. The existing `room-eligibility` endpoint and `inventory_eligibility` response label are preserved for compatibility; they do not establish commercial eligibility.
+
+| Distinct concept | Current #23 scope |
+| --- | --- |
+| Configured room candidates | Active Property, RoomType, Room and current base rate; date labels validated |
+| Commercial eligibility | Deferred: RatePlan/MarketSegment restrictions and minimum-stay policies are not evaluated |
+| Date-specific sellable availability | Deferred: no allotments, reservations/holds, housekeeping/maintenance blocks or date-specific inventory accounting |
+| Reservation confirmation | Deferred: no atomic booking confirmation or physical-room allocation |
+
+[Discovery #39](https://github.com/chuxorg/chux-hosp-platform/issues/39) governs future hotel-policy semantics; [#24](https://github.com/chuxorg/chux-hosp-platform/issues/24) owns approved reservation/allocation behavior. Follow the [policy design checklist](POLICY_DESIGN_CHECKLIST.md) before adding hotel-specific variation. Neither ADR-0004 nor this synchronization adds a rules engine, policy-management framework, property-specific branches or new business functionality to #23. The accepted base-rate rules, API paths and response structures remain unchanged, including the development-only restrictions below.
+
 ## Development-only API
 
 The same isolation requirements as [PMS configuration](PMS_CONFIGURATION.md) apply. **No authentication or tenant/role authorization exists.** Bind to localhost/isolated development networks and use synthetic data; do not expose management publicly.
