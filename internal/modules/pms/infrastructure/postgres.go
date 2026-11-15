@@ -86,8 +86,12 @@ func (s *Store) UpdateRoom(ctx context.Context, r domain.Room) (domain.Room, err
 }
 
 func classify(err error) error {
-	if err == nil { return nil }
-	if errors.Is(err, pgx.ErrNoRows) { return application.ErrNotFound }
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return application.ErrNotFound
+	}
 	var pge *pgconn.PgError
 	if errors.As(err, &pge) {
 		switch pge.Code {
