@@ -65,7 +65,7 @@ Keep stories small enough to review without excessive context. Prefer vertical s
 - CI checks are only enforceable when repository branch rules can require them. If branch protection is unavailable, owner must manually ensure green CI and PR review before merge.
 
 ## Current test baseline and planned transition
-PR #6 originally installed Python/FastAPI with pytest, SQLite and PostgreSQL tests. Owner accepted Go and PostgreSQL-only direction on 2026-11-15; [ADR-0003](adr/ADR-0003-go-postgres-defer-redis.md) supersedes ADR-0001. Issue #31 replaces, in one coherent PR, current Python application/tests/migrations/validation with Go, PostgreSQL via Docker and CI, compilation/version metadata, vet/race/unit/integration tests. Preserve required `bootstrap-validation` aggregate check. Redis is **not** part of the planned baseline; deferral is a recommendation pending confirmation.
+PR #6 originally installed Python/FastAPI with pytest, SQLite and PostgreSQL tests. Owner accepted Go and PostgreSQL-only direction on 2026-11-15; [ADR-0003](adr/ADR-0003-go-postgres-defer-redis.md) supersedes ADR-0001. Issue #31 replaces, in one coherent PR, current Python application/tests/migrations/validation with Go, PostgreSQL via Docker and CI, compilation/version metadata, vet/race/unit/integration tests. Preserve required `bootstrap-validation` aggregate check. Redis is **not** part of the planned baseline; the owner confirmed that caching will be deferred until a concrete performance or business requirement justifies a new ADR.
 The existing Python scaffold tests **do not** prove business-workflow coverage, module isolation or room-allocation concurrency; those remain story-level requirements.
 
 ## Operational ownership
