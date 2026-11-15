@@ -73,7 +73,7 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 	if err != nil {
 		return errors.New("cannot listen on HTTP_ADDR")
 	}
-	return serve(ctx, listener, platform.Handler(pool, cfg.DatabaseTimeout))
+	return serve(ctx, listener, composeHandler(pool, cfg.DatabaseTimeout))
 }
 
 func serve(ctx context.Context, listener net.Listener, handler http.Handler) error {
