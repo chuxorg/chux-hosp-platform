@@ -68,7 +68,7 @@ func TestRateHTTPValidationAndErrors(t *testing.T) {
 		if w.Code != want {
 			t.Fatalf("create/replace status: %d", w.Code)
 		}
-		if created && w.Header().Get("Location") != path {
+		if created && w.Header().Get("Location") != "/pms/v1"+path {
 			t.Fatal("missing create Location")
 		}
 	}

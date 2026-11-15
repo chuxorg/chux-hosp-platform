@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 
@@ -43,7 +44,7 @@ func (h *handler) setRoomTypeRate(w http.ResponseWriter, r *http.Request) {
 	code := http.StatusOK
 	if created {
 		code = http.StatusCreated
-		w.Header().Set("Location", r.URL.Path)
+		w.Header().Set("Location", fmt.Sprintf("/pms/v1/properties/%d/room-types/%d/rate", propertyID, roomTypeID))
 	}
 	writeJSON(w, code, rate)
 }
