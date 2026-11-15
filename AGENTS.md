@@ -30,6 +30,15 @@ If authoritative Dropbox material cannot be accessed, **stop before implementing
 - Every new vertical slice explicitly records affected modules, provided/consumed contracts, required optional modules, owned tables/migrations, test boundaries, and independent startup/contract test implications.
 - Do not infer implementation rules from legacy status codes, agent invoicing flows or duplicated reservation structures; preserve LEG → INF → owner-accepted REQ → test traceability.
 
+## Policy-driven business variation — ADR-0004
+- The owner approved **configuration-driven business policies** on 2026-11-15. Read [ADR-0004](docs/adr/ADR-0004-configuration-driven-business-policies.md) and the [policy design checklist](docs/POLICY_DESIGN_CHECKLIST.md) before adding variable hotel-specific business behavior.
+- **Invariants stay in reviewed Go code and authoritative PostgreSQL constraints/transactions** (double-booking, property isolation, monetary correctness, audit/security). A hotel's settings may never bypass an invariant.
+- **Permitted variation belongs to bounded, typed, module-owned configuration**, not `if propertyID == X` branches. New policy types/evaluator algorithms are designed by implementation teams/solution architects and approved by the business owner; authorized hotel roles will set allowed parameter values/scopes/effective dates through **validated UI forms** when that UI/security capability is delivered. Do not require hotel staff to write SQL, YAML, JSON rule expressions or code.
+- Make applicable policies deterministic, scoped, versioned/effective-dated as required by the real workflow, explainable, and auditable; protect historical confirmed bookings from retroactive policy changes. Define precedence, absent/invalid policy behavior and permissions **per approved story**, not through a speculative global inheritance model.
+- **Do not create a generic rules engine, policy DSL, global policy tables, rule-builder UI, or empty policy framework in advance.** Add typed evaluators only for accepted scenarios and test bounds, conflicts, versioning and rollback.
+- Respect the four separate concepts: **configured room candidate** (#23, no reservation check), **commercial eligibility** (RatePlan/MarketSegment policy), **sellable date-specific inventory/allotment availability**, and **atomically confirmed reservation** (#24). The existing #23 `room-eligibility` name is not proof of market-segment eligibility; do not silently rename/rework an in-review PR or expand it into allotment logic.
+- **#39** is the PMS policy discovery story before adding market-segment/allotment rules; the example `15 room-nights` is ambiguous and **not a universal 15-night minimum**. Ensure any rules essential to #24 are explicitly approved first; preserve core atomic booking invariant regardless.
+
 ## Work intake
 - Work only from a GitHub Issue marked Ready or explicitly authorized by the project owner. Use one delivery story per issue and, ordinarily, one PR per story.
 - Issue descriptions include goal, background, linked requirement IDs, acceptance criteria, test cases, scope exclusions, dependencies, and tasks (checklist).

@@ -30,6 +30,16 @@ Do not promote an INF to REQ merely because the legacy implementation contains i
 5. **Explicit contract/testing:** no direct import of another module's internal domain/ORM or table queries, optional-module startup, contract tests, and realistic PostgreSQL concurrency where necessary. In-memory events are not durable transactions.
 6. Every story records owning module, consumed interfaces, dependency enablement, owned schema/migration, test IDs and owner-approved acceptance rules. Detailed behavior remains Backlog until Ready approval.
 
+## Configuration-driven policy design gate (ADR-0004)
+
+The project owner approved [ADR-0004](adr/ADR-0004-configuration-driven-business-policies.md): **business invariants live in code/transaction constraints; approved hotel-to-hotel variation lives in bounded, module-owned policy configuration**. Follow the [policy design checklist](POLICY_DESIGN_CHECKLIST.md) when a story introduces variable commercial, inventory, guest, workflow or approval behavior.
+
+Before moving such a story to Ready, record: real business example/LEG-INF-REQ support; invariant versus configurable parameters; owning module; policy type/evaluator, applicability and precedence; allowed UI role and change approval; effective dating and history; safe missing/invalid-policy semantics; explanation/audit; integration and concurrency tests. Solution architects/implementation teams define supported evaluator algorithms; authorized hotel operators eventually configure permitted values through UI forms rather than code/SQL/YAML. No automatic assignment of roles or permission by this decision.
+
+Do not mistake **configured candidates** (#23) for **market eligibility**, **date-specific allotment availability** or a **confirmed allocation**. The market-segment/allotment discovery backlog [#39](https://github.com/chuxorg/chux-hosp-platform/issues/39) must resolve concrete hotel policies before they are implemented; #24's physical-room allocation invariant must remain atomic regardless of policy variation.
+
+No new rule engine, DSL, generic workflow service, policy schema, policy editor or change to #23's currently approved base-rate behavior is implied by ADR-0004.
+
 ## Story lifecycle
 1. **Discovery/backlog:** ChatGPT and owner convert approved REQ into one bounded GitHub issue; link exact Dropbox doc/version, record story acceptance tests. If requirements are not approved, issue is research/spike, not ready for build.
 2. **Ready:** Clear independent outcome, dependencies, exclusions, and test cases; owner/prioritizer accepts scope.
