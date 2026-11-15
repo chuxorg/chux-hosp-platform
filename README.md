@@ -13,18 +13,39 @@ Greenfield, **modular Hospitality Platform**: independent PMS, Experiences, Loya
 - [ADR-0002 modular platform architecture](docs/adr/ADR-0002-modular-hospitality-platform.md)
 - [Approved module boundary map (Dropbox)](https://www.dropbox.com/scl/fi/4ia47cl33y9ibtighkm3j/Hospitality-Modular-Platform-Module-Boundaries-and-Integration-Contracts.paper?rlkey=x5zlc6w9s6u2w9yqh94yye8yk&dl=0)
 
-## Current backend bootstrap (transition pending)
-The target stack is **Go + PostgreSQL from day one**, with Docker for local PostgreSQL, a versioned compiled executable, Go tests and migration tooling. Redis is **deferred by owner decision** until a measured use case justifies caching. [Issue #31](https://github.com/chuxorg/chux-hosp-platform/issues/31) tracks replacement of the existing **Python** scaffold. Until that change merges, these are still the commands for the **current code**, not the target stack.
+## Go/PostgreSQL bootstrap
 
-Python 3.13 + FastAPI, SQLAlchemy/Alembic, SQLite local and PostgreSQL deployment target. No PMS or Experiences business workflows implemented yet; development will proceed through independently testable module slices. Readiness endpoints: GET /healthz and GET /readyz.
+Go **1.27.4**, standard `net/http`, pgx pooling and PostgreSQL **17**. Goose SQL migrations are embedded in one version-identifiable executable. ADR-0003 replaces Python/SQLite; ADR-0002's modular-monolith boundaries remain unchanged. No business module, Redis or broker is introduced.
 
-~~~bash
-python3.13 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e '.[dev]'
-bash scripts/validate.sh
-alembic upgrade head
-uvicorn hospitality.main:app --reload
-~~~
+Prerequisites: Go 1.27.4, Git, Docker Engine 27+ (or Docker Desktop) and Compose v2.24+.
 
-**Current** quality workflow still executes Python unit tests, SQLite/PostgreSQL integration, and lint/format checks; it will change in Issue #31. The bootstrap-validation required check aggregates both test jobs. Original PHP, DB and guest data must remain outside Git.
+```bash
+git config core.hooksPath .githooks
+docker compose up -d --wait postgres
+export DATABASE_URL='postgres://hospitality:local_only_change_me@127.0.0.1:5432/hospitality?sslmode=disable'
+go run ./cmd/hospitality migrate up
+go run ./cmd/hospitality
+# GET http://127.0.0.1:8000/healthz and /readyz
+```
+
+Or build/run the app and PostgreSQL together:
+
+```bash
+COMMIT="$(git rev-parse HEAD)" BUILD_DATE="$(git show -s --format=%cI HEAD)" docker compose up -d --build --wait
+docker compose run --rm app migrate up
+```
+
+Compose credentials are **development-only examples** and ports bind to localhost. Existing Alembic databases are refused rather than reset; choose a fresh development database using the [safe transition instructions](docs/LOCAL_SETUP.md#existing-alembic-development-databases). Startup does not automatically migrate or delete data.
+
+```bash
+./scripts/validate.sh
+# Provision once, without resetting an existing DB:
+docker compose exec postgres createdb -U hospitality hospitality_test
+TEST_DATABASE_URL='postgres://hospitality:local_only_change_me@127.0.0.1:5432/hospitality_test?sslmode=disable' ./scripts/test-integration.sh
+VERSION=0.1.0-dev ./scripts/build.sh
+./build/hospitality --version
+```
+
+See [local setup](docs/LOCAL_SETUP.md) for configuration, migrations/rollback, race tests, isolated test database safeguards, container builds and standalone deployment. CI verifies Go checks, real PostgreSQL and the container, aggregated by the unchanged required `bootstrap-validation` check. Original PHP, databases, real guest data and credentials stay outside Git.
+
+Implemented packages: `cmd/hospitality` (composition/CLI/server), `internal/platform` (configuration, pooling configuration and HTTP probes), `migrations` (platform-owned SQL). Add module-owned domain/application/infrastructure/API packages only with actual approved stories.

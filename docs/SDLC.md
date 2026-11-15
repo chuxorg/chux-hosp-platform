@@ -1,6 +1,6 @@
 # Hospitality Platform — SDLC and information governance
 
-**Status:** Active project delivery process; ADR-0002 modular direction merged in PR #30. Go/PostgreSQL target accepted on 2026-11-15 (ADR-0003); Python-to-Go bootstrap migration pending Issue #31. **Project:** [chuxorg Project 14](https://github.com/orgs/chuxorg/projects/14).
+**Status:** Active project delivery process; ADR-0002 modular direction merged in PR #30. Go/PostgreSQL target accepted on 2026-11-15 (ADR-0003); Go/PostgreSQL bootstrap implemented by Issue #31. **Project:** [chuxorg Project 14](https://github.com/orgs/chuxorg/projects/14).
 
 ## One authoritative home per concern
 
@@ -64,9 +64,14 @@ Keep stories small enough to review without excessive context. Prefer vertical s
 - Prefer squash merge; one PR per story; owner authorizes merges; solo work does not require a separate approving review. Document DB migration and rollback when relevant.
 - CI checks are only enforceable when repository branch rules can require them. If branch protection is unavailable, owner must manually ensure green CI and PR review before merge.
 
-## Current test baseline and planned transition
-PR #6 originally installed Python/FastAPI with pytest, SQLite and PostgreSQL tests. Owner accepted Go and PostgreSQL-only direction on 2026-11-15; [ADR-0003](adr/ADR-0003-go-postgres-defer-redis.md) supersedes ADR-0001. Issue #31 replaces, in one coherent PR, current Python application/tests/migrations/validation with Go, PostgreSQL via Docker and CI, compilation/version metadata, vet/race/unit/integration tests. Preserve required `bootstrap-validation` aggregate check. Redis is **not** part of the planned baseline; the owner confirmed that caching will be deferred until a concrete performance or business requirement justifies a new ADR.
-The existing Python scaffold tests **do not** prove business-workflow coverage, module isolation or room-allocation concurrency; those remain story-level requirements.
+## Current test baseline
+Issue #31 replaces the Python bootstrap from PR #6 with Go 1.27.4, PostgreSQL 17, pgx and embedded Goose SQL migrations under owner-accepted ADR-0003. Historical ADR-0001 is retained as superseded; ADR-0002 boundaries remain authoritative.
+
+Before each commit run `./scripts/validate.sh` (format, module verification, vet, unit tests and build). Before review, run race-enabled unit tests, `./scripts/test-build.sh`, and `./scripts/test-integration.sh` with a dedicated `TEST_DATABASE_URL`; `FULL_VALIDATION=1` includes race/integration in the validator. The local hook preserves routine validation without requiring a database for documentation edits.
+
+CI runs Go checks, real PostgreSQL integration/migration tests and container smoke checks; `bootstrap-validation` aggregates all three with `if: always()` and fails unless every required job succeeds. Keep that exact check name and existing branch protections. The bootstrap tests prove configuration, HTTP probes, graceful shutdown, version metadata, migration lifecycle and real database transactions; they do not prove PMS rules, module isolation or room-allocation concurrency. Add those with their owning stories.
+
+SQL exceptions apply only to reviewed versioned files in `migrations/`. No raw dumps/archives are permitted. Test databases are uniquely created and exclusively owned by each suite; never silently drop volumes, reset developer databases or adopt Alembic state. See [local setup](LOCAL_SETUP.md) for explicit safe transition and rollback. Redis remains deferred until a concrete need justifies a new decision.
 
 ## Operational ownership
 - **Owner:** business priorities, acceptance, final merge, deployment authorization.

@@ -1,7 +1,7 @@
 # Codex Instructions — Hospitality Platform
 
 ## Mission and authority
-Build a **greenfield, modular Hospitality Platform**, not a PMS with built-in extras. The first functional module is a standalone PMS informed by the private legacy PHP/MyISAM capability evidence. Separate Experiences (Thai Cooking after PMS), Procurement, Operations and Loyalty modules are independently useful and integrate only through explicit contracts. Target is one compiled Go application and PostgreSQL database initially (current Python scaffold is temporary until Issue #31 implementation); no broker, microservices, plugin framework or live integrations as prerequisites.
+Build a **greenfield, modular Hospitality Platform**, not a PMS with built-in extras. The first functional module is a standalone PMS informed by the private legacy PHP/MyISAM capability evidence. Separate Experiences (Thai Cooking after PMS), Procurement, Operations and Loyalty modules are independently useful and integrate only through explicit contracts. Target is one compiled Go application and PostgreSQL database initially; no broker, microservices, plugin framework or live integrations as prerequisites.
 
 The legacy PHP/MyISAM PMS is **evidence, not implementation**. Never import it as a code dependency, copy its schema table-for-table, or assume every legacy behavior is required.
 
@@ -13,12 +13,13 @@ The legacy PHP/MyISAM PMS is **evidence, not implementation**. Never import it a
 
 If authoritative Dropbox material cannot be accessed, **stop before implementing affected behavior**, state what document/version is missing, and request an accessible sanitized copy. Never quietly guess. Do not edit the approved Dropbox source from the Git checkout.
 
-## Stack transition — ADR-0003
+## Active stack — ADR-0003
 - Owner approved **Go + PostgreSQL-first** on 2026-11-15. [ADR-0003](docs/adr/ADR-0003-go-postgres-defer-redis.md) supersedes ADR-0001's Python and SQLite target; ADR-0002 module architecture still governs design.
-- Issue #31 will replace the **currently checked-in** Python bootstrap, Alembic migration and pytest CI with a Go binary, PostgreSQL migrations, real integration tests and equivalent quality checks. Until that PR merges, the existing Python commands/CI remain executable: do not mix an incomplete dual-stack bootstrap on `master`.
-- Go: favor `net/http`, `pgx`, standard `go test`/`-race`/`go vet`/`gofmt`; select a Go SQL migration runner, versioned binary build metadata and Docker PostgreSQL in the implementation PR.
+- Issue #31 replaces the executable Python bootstrap with Go 1.27.4, PostgreSQL 17, pgx/v5 pooling and embedded Goose SQL migrations. No executable Python or SQLite workflow remains. Historical ADRs remain unchanged.
+- Use `net/http`, `pgx`, standard `go test`/`-race`/`go vet`/`gofmt`, and Goose SQL migrations. Run `./scripts/validate.sh` before commits; run `FULL_VALIDATION=1` with a dedicated `TEST_DATABASE_URL` before review. Preserve the required `bootstrap-validation` aggregate gate, including every Go/PostgreSQL/container job.
 - Redis/caching **is not a Phase 1 dependency**; the owner confirmed deferral on 2026-11-15; avoid a Redis container, cache client or generic cache library until profiling justifies one. Preserve authoritative database transactions for availability, booking and financial records.
-- Do not begin feature work (#20–26) on the Python scaffold. Finish the controlled Go bootstrap transition first.
+- Do not begin feature work (#20–26) until the Go bootstrap PR is accepted. Never weaken branch protections to accommodate new tooling.
+- Integration tests must create/drop only their own unique database through a dedicated `*_test` provisioning database, never reset application or production data. Alembic databases require the explicit safe development transition in `docs/LOCAL_SETUP.md`. Permit SQL only in reviewed `migrations/NNNNN_name.sql`; dumps/legacy archives remain forbidden.
 
 ## Module boundaries — ADR-0002
 - The owner-approved modular architecture is recorded in [ADR-0002](docs/adr/ADR-0002-modular-hospitality-platform.md), [Dropbox module ownership](https://www.dropbox.com/scl/fi/4ia47cl33y9ibtighkm3j/Hospitality-Modular-Platform-Module-Boundaries-and-Integration-Contracts.paper?rlkey=x5zlc6w9s6u2w9yqh94yye8yk&dl=0) and the [legacy capability catalog](https://www.dropbox.com/scl/fi/nbk31b6fa9sv347xf4iog/Legacy-PMS-Capability-Catalog-and-Proposed-Module-Ownership.paper?rlkey=xycfneji3bchtiy658rlsf8zo&dl=0).
