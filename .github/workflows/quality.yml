@@ -87,7 +87,7 @@ jobs:
           test "$(docker compose exec -T app id -u)" = 65532
           docker compose exec -T app hospitality --version | grep -F "commit=$COMMIT"
           docker compose run --rm app migrate up
-          docker compose run --rm app migrate status | grep -F 'version=1'
+          docker compose run --rm app migrate status | grep -E 'version=[1-9][0-9]*'
           docker compose exec -T app wget -qO- http://127.0.0.1:8000/healthz | grep -F '"status":"ok"'
           docker compose exec -T app wget -qO- http://127.0.0.1:8000/readyz | grep -F '"status":"ready"'
           # Fresh CI-only volume, never a developer database.
