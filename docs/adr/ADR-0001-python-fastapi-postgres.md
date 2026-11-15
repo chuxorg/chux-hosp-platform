@@ -1,6 +1,6 @@
 # ADR-0001: Python/FastAPI backend with portable relational persistence
 
-Status: Accepted — approved by project owner on 2026-11-14  
+Status: Superseded by [ADR-0003](ADR-0003-go-postgres-defer-redis.md) on 2026-11-15 (previously accepted on 2026-11-14)  
 Date: 2026-11-14  
 Owner: Hospitality project owner  
 Refs: Issue #3; REQ-PLT-001, REQ-PLT-002; Dropbox greenfield specification
