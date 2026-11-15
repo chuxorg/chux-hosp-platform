@@ -13,6 +13,9 @@ type fakeStore struct {
 	roomTypes []domain.RoomType
 	rooms     []domain.Room
 	calls     int
+	rates     []domain.RoomTypeRate
+	eligible  []domain.EligibleRoom
+	rateErr   error
 }
 
 func (f *fakeStore) CreateProperty(_ context.Context, p domain.Property) (domain.Property, error) {

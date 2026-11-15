@@ -31,6 +31,9 @@ type Store interface {
 	CreateRoom(context.Context, domain.Room) (domain.Room, error)
 	GetRoom(context.Context, int64, int64) (domain.Room, error)
 	UpdateRoom(context.Context, domain.Room) (domain.Room, error)
+	SetRoomTypeRate(context.Context, domain.RoomTypeRate) (domain.RoomTypeRate, bool, error)
+	GetRoomTypeRate(context.Context, int64, int64) (domain.RoomTypeRate, error)
+	EligibleRooms(context.Context, int64) ([]domain.EligibleRoom, error)
 }
 
 type Service struct{ store Store }

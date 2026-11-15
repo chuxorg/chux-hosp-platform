@@ -74,4 +74,4 @@ Do not reuse this Stay/Room model as an Experiences Session model or as an all-p
 - Existing PMS-only composition test, import-boundary architecture suite, PostgreSQL bootstrap tests, Docker smoke and required `bootstrap-validation` stay green.
 - Tests only create/drop their own cryptographically unique disposable test database. The supplied `TEST_DATABASE_URL` provisioning DB must end in `_test` and must not be the application DB.
 
-**Next decisions:** #23 rate model, calendar and blocking states; #24 booking statuses/room allocation and concurrency; #25 check-in/out; #26 folio. Nothing in Issue #22 validates those workflows.
+**Next slices:** Issue #23 now implements the owner-approved [nightly rate and inventory-eligibility contract](PMS_RATES_AND_ELIGIBILITY.md). Reservation-aware blocking/overlap and atomic room allocation remain #24; #25 owns check-in/out and #26 folio. Nothing in Issue #22 validates those workflows.
