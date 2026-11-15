@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -65,14 +66,27 @@ func openIsolatedPMSDatabase(t *testing.T) (string, *pgxpool.Pool) {
 			t.Error("could not drop isolated test database")
 		}
 	})
-	child := cfg.Copy()
-	child.Database = name
-	databaseURL := child.ConnString()
+	// ConnConfig.ConnString() preserves the original DSN even after Database
+	// is modified. Explicitly target and then verify the unique child database
+	// before any migration or DML can run.
+	childURL, err := url.Parse(os.Getenv("TEST_DATABASE_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	childURL.Path = "/" + name
+	params := childURL.Query()
+	params.Del("dbname")
+	childURL.RawQuery = params.Encode()
+	databaseURL := childURL.String()
 	pool, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
+	var connectedName string
+	if err := pool.QueryRow(ctx, "SELECT current_database()").Scan(&connectedName); err != nil || connectedName != name {
+		t.Fatal("test database URL did not target the isolated child")
+	}
 	return databaseURL, pool
 }
 
