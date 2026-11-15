@@ -1,0 +1,14 @@
+# Allow only build inputs: no Git history, local environment, legacy data or credentials.
+*
+!go.mod
+!go.sum
+!.go-version
+!cmd/
+!cmd/**
+!internal/
+!internal/**
+!migrations/
+!migrations/**
+!scripts/
+!scripts/build.sh
+!Dockerfile

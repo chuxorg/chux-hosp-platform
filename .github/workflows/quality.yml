@@ -9,18 +9,30 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  sqlite-tests:
+  go-checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@v7.0.1
         with:
-          python-version: '3.13'
-      - name: Install package and test dependencies
-        run: python -m pip install -e '.[dev]'
-      - name: Run validation (unit and SQLite integration)
-        run: bash scripts/validate.sh
+          persist-credentials: false
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: .go-version
+      - name: Download and verify dependencies
+        run: go mod download && go mod verify
+      - name: Formatting, vet, unit tests and executable build
+        run: ./scripts/validate.sh
+      - name: Check module files are tidy
+        run: go mod tidy && git diff --exit-code -- go.mod go.sum
+      - name: Race-enabled unit tests
+        run: go test -race ./...
+      - name: Verify embedded executable version information
+        run: ./scripts/test-build.sh
       - name: Validate Conventional Commit PR title
         if: github.event_name == 'pull_request'
         env:
@@ -44,26 +56,58 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      TEST_DATABASE_URL: postgresql+psycopg://hospitality:local_test_only@localhost:5432/hospitality_test
+      TEST_DATABASE_URL: postgres://hospitality:local_test_only@localhost:5432/hospitality_test?sslmode=disable
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@v7.0.1
         with:
-          python-version: '3.13'
-      - name: Install package and test dependencies
-        run: python -m pip install -e '.[dev]'
-      - name: Run real PostgreSQL integration tests
-        run: python -m pytest -q -m integration
+          persist-credentials: false
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: .go-version
+      - name: Download and verify dependencies
+        run: go mod download && go mod verify
+      - name: Race-enabled real PostgreSQL, migrations, commit/rollback, readiness and safety tests
+        run: ./scripts/test-integration.sh
+  container-smoke:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 0.1.0-ci
+      COMMIT: ${{ github.sha }}
+      BUILD_DATE: reproducible-ci
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate Compose and start application with PostgreSQL
+        run: |
+          docker compose config -q
+          docker compose up -d --build --wait --wait-timeout 180
+      - name: Check runtime, migrations and HTTP
+        run: |
+          test "$(docker compose exec -T app id -u)" = 65532
+          docker compose exec -T app hospitality --version | grep -F "commit=$COMMIT"
+          docker compose run --rm app migrate up
+          docker compose run --rm app migrate status | grep -F 'version=1'
+          docker compose exec -T app wget -qO- http://127.0.0.1:8000/healthz | grep -F '"status":"ok"'
+          docker compose exec -T app wget -qO- http://127.0.0.1:8000/readyz | grep -F '"status":"ready"'
+          # Fresh CI-only volume, never a developer database.
+          docker compose run --rm app migrate down --allow-down
+          docker compose run --rm app migrate up
+      - name: Stop disposable CI environment
+        if: always()
+        run: docker compose down -v
   bootstrap-validation:
     name: bootstrap-validation
     if: always()
-    needs: [sqlite-tests, postgres-tests]
+    needs: [go-checks, postgres-tests, container-smoke]
     runs-on: ubuntu-latest
     steps:
-      - name: Require every test job to pass
+      - name: Require every build, lint, unit, integration and container job to pass
         env:
-          SQLITE_RESULT: ${{ needs.sqlite-tests.result }}
+          GO_RESULT: ${{ needs.go-checks.result }}
           PG_RESULT: ${{ needs.postgres-tests.result }}
+          CONTAINER_RESULT: ${{ needs.container-smoke.result }}
         run: |
-          test "$SQLITE_RESULT" = success
+          test "$GO_RESULT" = success
           test "$PG_RESULT" = success
+          test "$CONTAINER_RESULT" = success

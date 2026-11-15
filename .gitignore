@@ -38,6 +38,7 @@ coverage/
 *.db-shm
 *.db-wal
 *.sql
+!migrations/[0-9][0-9][0-9][0-9][0-9]_*.sql
 *.sql.gz
 *.frm
 *.MYD
