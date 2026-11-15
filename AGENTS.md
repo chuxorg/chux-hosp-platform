@@ -17,7 +17,7 @@ If authoritative Dropbox material cannot be accessed, **stop before implementing
 - Owner approved **Go + PostgreSQL-first** on 2026-11-15. [ADR-0003](docs/adr/ADR-0003-go-postgres-defer-redis.md) supersedes ADR-0001's Python and SQLite target; ADR-0002 module architecture still governs design.
 - Issue #31 will replace the **currently checked-in** Python bootstrap, Alembic migration and pytest CI with a Go binary, PostgreSQL migrations, real integration tests and equivalent quality checks. Until that PR merges, the existing Python commands/CI remain executable: do not mix an incomplete dual-stack bootstrap on `master`.
 - Go: favor `net/http`, `pgx`, standard `go test`/`-race`/`go vet`/`gofmt`; select a Go SQL migration runner, versioned binary build metadata and Docker PostgreSQL in the implementation PR.
-- Redis/caching **is not a Phase 1 dependency** and deferral is a current recommendation pending explicit owner confirmation; avoid a Redis container, cache client or generic cache library until profiling justifies one. Preserve authoritative database transactions for availability, booking and financial records.
+- Redis/caching **is not a Phase 1 dependency**; the owner confirmed deferral on 2026-11-15; avoid a Redis container, cache client or generic cache library until profiling justifies one. Preserve authoritative database transactions for availability, booking and financial records.
 - Do not begin feature work (#20–26) on the Python scaffold. Finish the controlled Go bootstrap transition first.
 
 ## Module boundaries — ADR-0002
