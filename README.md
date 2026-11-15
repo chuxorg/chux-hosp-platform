@@ -22,6 +22,12 @@ No Experiences, Loyalty, Procurement or Operations module is required.
 Read [Module boundaries and composition](docs/MODULES.md) for checked dependency rules,
 data-ownership limitations and the next approved PMS implementation steps.
 
+## PMS configuration (Issue #22)
+
+The first PMS business slice supports **Property → RoomType → individual Room** create/read/replace flows under `/pms/v1/`, using PostgreSQL-owned `pms_*` tables and domain/application/infrastructure/API boundaries. Apply migrations before issuing requests.
+
+See [PMS configuration API, data rules, tests and security caveats](docs/PMS_CONFIGURATION.md). **These endpoints are development-only and have no authentication or tenant authorization**; keep the service on localhost/isolation and use synthetic data. Rates, availability, reservations, guests, folios and optional modules are not implemented.
+
 ## Go/PostgreSQL bootstrap
 
 Go **1.27.4**, standard `net/http`, pgx pooling and PostgreSQL **17**. Goose SQL migrations are embedded in one version-identifiable executable. ADR-0003 replaces Python/SQLite; ADR-0002's modular-monolith boundaries remain unchanged. No business module, Redis or broker is introduced.
