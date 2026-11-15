@@ -1,4 +1,5 @@
 FROM golang:1.27.4-alpine AS builder
+RUN apk add --no-cache bash
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
