@@ -20,7 +20,7 @@
 5. PostgreSQL drivers are confined to a module's `infrastructure/` (or Platform bootstrap), not the domain, application or API.
 6. The test includes deliberately forbidden import examples to prove the checker is capable of rejecting coupling. It also fails if the initial PMS production source disappears, avoiding a vacuous pass.
 
-Import analysis is not a complete SQL-access analyzer. Issue #22 adds only `pms_*`-owned tables and queries, a composite same-property FK, and isolated PostgreSQL tests for constraint integrity. Enforce query ownership when adding each later module; no module may directly query another module's business tables. PostgreSQL remains authoritative for room allocation, transactions, and future pricing/financial state.
+Import analysis is not a complete SQL-access analyzer. Issue #22 adds `TestModuleSQLTableOwnership`, which inspects literal SQL in module infrastructure and rejects direct queries to another module's tables. This is a **limited static check**, not a general SQL parser: migrations and real PostgreSQL tests additionally verify the new `pms_*` tables, composite same-property FK, and atomic constraints. All later modules must likewise own their tables and avoid direct SQL into other modules. PostgreSQL remains authoritative for room allocation, transactions, and future pricing/financial state.
 
 ## Typed contracts and fake-provider tests — when needed
 
