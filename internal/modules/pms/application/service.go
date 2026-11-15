@@ -38,17 +38,25 @@ type Service struct{ store Store }
 func NewService(store Store) *Service { return &Service{store: store} }
 
 func (s *Service) CreateProperty(ctx context.Context, p domain.Property) (domain.Property, error) {
-	if err := validateProperty(&p); err != nil { return domain.Property{}, err }
+	if err := validateProperty(&p); err != nil {
+		return domain.Property{}, err
+	}
 	p.ID = 0
 	return s.store.CreateProperty(ctx, p)
 }
 func (s *Service) GetProperty(ctx context.Context, id int64) (domain.Property, error) {
-	if id <= 0 { return domain.Property{}, ErrInvalid }
+	if id <= 0 {
+		return domain.Property{}, ErrInvalid
+	}
 	return s.store.GetProperty(ctx, id)
 }
 func (s *Service) UpdateProperty(ctx context.Context, p domain.Property) (domain.Property, error) {
-	if p.ID <= 0 { return domain.Property{}, ErrInvalid }
-	if err := validateProperty(&p); err != nil { return domain.Property{}, err }
+	if p.ID <= 0 {
+		return domain.Property{}, ErrInvalid
+	}
+	if err := validateProperty(&p); err != nil {
+		return domain.Property{}, err
+	}
 	return s.store.UpdateProperty(ctx, p)
 }
 func validateProperty(p *domain.Property) error {
@@ -63,17 +71,25 @@ func validateProperty(p *domain.Property) error {
 	return nil
 }
 func (s *Service) CreateRoomType(ctx context.Context, t domain.RoomType) (domain.RoomType, error) {
-	if err := validateRoomType(&t); err != nil { return domain.RoomType{}, err }
+	if err := validateRoomType(&t); err != nil {
+		return domain.RoomType{}, err
+	}
 	t.ID = 0
 	return s.store.CreateRoomType(ctx, t)
 }
 func (s *Service) GetRoomType(ctx context.Context, propertyID, id int64) (domain.RoomType, error) {
-	if propertyID <= 0 || id <= 0 { return domain.RoomType{}, ErrInvalid }
+	if propertyID <= 0 || id <= 0 {
+		return domain.RoomType{}, ErrInvalid
+	}
 	return s.store.GetRoomType(ctx, propertyID, id)
 }
 func (s *Service) UpdateRoomType(ctx context.Context, t domain.RoomType) (domain.RoomType, error) {
-	if t.ID <= 0 { return domain.RoomType{}, ErrInvalid }
-	if err := validateRoomType(&t); err != nil { return domain.RoomType{}, err }
+	if t.ID <= 0 {
+		return domain.RoomType{}, ErrInvalid
+	}
+	if err := validateRoomType(&t); err != nil {
+		return domain.RoomType{}, err
+	}
 	return s.store.UpdateRoomType(ctx, t)
 }
 func validateRoomType(t *domain.RoomType) error {
@@ -84,17 +100,25 @@ func validateRoomType(t *domain.RoomType) error {
 	return nil
 }
 func (s *Service) CreateRoom(ctx context.Context, r domain.Room) (domain.Room, error) {
-	if err := validateRoom(&r); err != nil { return domain.Room{}, err }
+	if err := validateRoom(&r); err != nil {
+		return domain.Room{}, err
+	}
 	r.ID = 0
 	return s.store.CreateRoom(ctx, r)
 }
 func (s *Service) GetRoom(ctx context.Context, propertyID, id int64) (domain.Room, error) {
-	if propertyID <= 0 || id <= 0 { return domain.Room{}, ErrInvalid }
+	if propertyID <= 0 || id <= 0 {
+		return domain.Room{}, ErrInvalid
+	}
 	return s.store.GetRoom(ctx, propertyID, id)
 }
 func (s *Service) UpdateRoom(ctx context.Context, r domain.Room) (domain.Room, error) {
-	if r.ID <= 0 { return domain.Room{}, ErrInvalid }
-	if err := validateRoom(&r); err != nil { return domain.Room{}, err }
+	if r.ID <= 0 {
+		return domain.Room{}, ErrInvalid
+	}
+	if err := validateRoom(&r); err != nil {
+		return domain.Room{}, err
+	}
 	return s.store.UpdateRoom(ctx, r)
 }
 func validateRoom(r *domain.Room) error {
