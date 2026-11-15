@@ -1,6 +1,6 @@
 # ADR-0003: Go backend, PostgreSQL-first and defer Redis
 
-Status: **Accepted direction by owner on 2026-11-15; documentation and implementation PRs require their own review and merge**
+Status: **Go + PostgreSQL accepted by owner on 2026-11-15; deferring Redis is a recommended design decision pending owner confirmation; PRs require review and merge**
 Date: 2026-11-15
 Owner: Hospitality project owner
 Supersedes: **ADR-0001** technology choice (Python/FastAPI, SQLAlchemy/Alembic and SQLite portability); it does **not** supersede ADR-0002 modular boundaries
