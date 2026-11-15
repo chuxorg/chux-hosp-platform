@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -47,21 +48,37 @@ func TestPostgresLifecycle(t *testing.T) {
 			t.Error("failed to remove exclusively owned test database")
 		}
 	}()
-	child := cfg.Copy()
-	child.Database = name
-	databaseURL := child.ConnString()
+	// ConnConfig.ConnString() preserves the original DSN even after Database
+	// is modified. Explicitly target and then verify the unique child database
+	// before any migration or DML can run.
+	childURL, err := url.Parse(os.Getenv("TEST_DATABASE_URL"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	childURL.Path = "/" + name
+	params := childURL.Query()
+	params.Del("dbname")
+	childURL.RawQuery = params.Encode()
+	databaseURL := childURL.String()
 	pool, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer pool.Close()
+	var connectedName string
+	if err := pool.QueryRow(ctx, "SELECT current_database()").Scan(&connectedName); err != nil || connectedName != name {
+		t.Fatal("test database URL did not target the isolated child")
+	}
 
+	// Later module migrations must not invalidate the platform bootstrap checks.
+	var migrationVersion int64
 	t.Run("initial migration and idempotence", func(t *testing.T) {
 		for range 2 {
 			v, err := migrations.Run(ctx, databaseURL, "up")
-			if err != nil || v != 1 {
+			if err != nil || v < 1 || (migrationVersion != 0 && v != migrationVersion) {
 				t.Fatalf("migration version %d: %v", v, err)
 			}
+			migrationVersion = v
 		}
 		var keyLen, valueLen int
 		if err := pool.QueryRow(ctx, "SELECT character_maximum_length FROM information_schema.columns WHERE table_name='platform_metadata' AND column_name='key'").Scan(&keyLen); err != nil {
@@ -129,15 +146,15 @@ func TestPostgresLifecycle(t *testing.T) {
 	})
 	t.Run("migration rollback and reapply", func(t *testing.T) {
 		v, err := migrations.Run(ctx, databaseURL, "down")
-		if err != nil || v != 0 {
+		if err != nil || v != migrationVersion-1 {
 			t.Fatalf("rollback version %d: %v", v, err)
 		}
-		var absent bool
-		if err = pool.QueryRow(ctx, "SELECT to_regclass('platform_metadata') IS NULL").Scan(&absent); err != nil || !absent {
-			t.Fatal("rollback left metadata table")
+		var metadataPresent bool
+		if err = pool.QueryRow(ctx, "SELECT to_regclass('platform_metadata') IS NOT NULL").Scan(&metadataPresent); err != nil || metadataPresent != (v > 0) {
+			t.Fatal("rollback changed platform metadata unexpectedly")
 		}
-		if _, err = migrations.Run(ctx, databaseURL, "up"); err != nil {
-			t.Fatal(err)
+		if restored, err := migrations.Run(ctx, databaseURL, "up"); err != nil || restored != migrationVersion {
+			t.Fatalf("reapply: version %d: %v", restored, err)
 		}
 	})
 	t.Run("Alembic refusal preserves data", func(t *testing.T) {

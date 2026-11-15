@@ -17,7 +17,7 @@ func TestPMSOnlyComposition(t *testing.T) {
 	}{
 		{"platform health", "GET", "/healthz", 200, "{\"status\":\"ok\"}\n"},
 		{"PMS module", "GET", "/pms/v1/status", 200, "{\"module\":\"pms\",\"status\":\"bootstrap\"}\n"},
-		{"PMS unknown route", "GET", "/pms/v1/properties", 404, ""},
+		{"PMS unknown route", "GET", "/pms/v1/rates", 404, ""},
 		{"PMS method rejection", "POST", "/pms/v1/status", 405, ""},
 		{"optional module absent", "GET", "/experiences/v1/status", 404, ""},
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 func TestModuleHandler(t *testing.T) {
-	handler := Handler()
+	handler := Handler(nil)
 	cases := []struct {
 		name, method, path string
 		wantCode           int
@@ -14,7 +14,7 @@ func TestModuleHandler(t *testing.T) {
 	}{
 		{"bootstrap route", "GET", "/status", 200, "{\"module\":\"pms\",\"status\":\"bootstrap\"}\n"},
 		{"unsupported method", "POST", "/status", 405, ""},
-		{"unimplemented business route", "GET", "/properties", 404, ""},
+		{"unimplemented business route", "GET", "/rates", 404, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
