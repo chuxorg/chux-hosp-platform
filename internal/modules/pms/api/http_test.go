@@ -6,7 +6,7 @@ import (
 )
 
 func TestModuleHandler(t *testing.T) {
-	handler := Handler()
+	handler := Handler(nil)
 	cases := []struct {
 		name, method, path string
 		wantCode           int
