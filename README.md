@@ -1,6 +1,6 @@
 # Hospitality Platform
 
-Greenfield Hospitality platform with foundational PMS/CRM capabilities and an extensible Experience layer. Phase 1 is a small Thailand cooking pilot with simulated payments/commissions and no live integrations.
+Greenfield, **modular Hospitality Platform**: independent PMS, Experiences, Loyalty, Procurement, and Operations modules inside one FastAPI application. **PMS is the first functional delivery**; Thai Cooking demonstrates the separate Experiences framework later. No distributed services, real payment processing or live integrations required initially.
 
 ## Project references
 - [GitHub Project #14](https://github.com/orgs/chuxorg/projects/14)
@@ -9,9 +9,11 @@ Greenfield Hospitality platform with foundational PMS/CRM capabilities and an ex
 - [SDLC](docs/SDLC.md)
 - [Local setup and tests](docs/LOCAL_SETUP.md)
 - [ADR-0001 accepted backend decision](docs/adr/ADR-0001-python-fastapi-postgres.md)
+- [ADR-0002 modular platform architecture](docs/adr/ADR-0002-modular-hospitality-platform.md)
+- [Approved module boundary map (Dropbox)](https://www.dropbox.com/scl/fi/4ia47cl33y9ibtighkm3j/Hospitality-Modular-Platform-Module-Boundaries-and-Integration-Contracts.paper?rlkey=x5zlc6w9s6u2w9yqh94yye8yk&dl=0)
 
 ## Backend bootstrap
-Python 3.13 + FastAPI, SQLAlchemy/Alembic, SQLite local and PostgreSQL deployment target. No PMS or Experience workflows implemented yet. Readiness endpoints: GET /healthz and GET /readyz.
+Python 3.13 + FastAPI, SQLAlchemy/Alembic, SQLite local and PostgreSQL deployment target. No PMS or Experiences business workflows implemented yet; development will proceed through independently testable module slices. Readiness endpoints: GET /healthz and GET /readyz.
 
 ~~~bash
 python3.13 -m venv .venv

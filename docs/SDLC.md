@@ -1,6 +1,6 @@
 # Hospitality Platform — SDLC and information governance
 
-**Status:** Bootstrap process, subject to review in PR #2. **Project:** [chuxorg Project 14](https://github.com/orgs/chuxorg/projects/14).
+**Status:** Active project delivery process; ADR-0001 stack approved/merged and ADR-0002 modular direction owner-accepted (implementation change pending review). **Project:** [chuxorg Project 14](https://github.com/orgs/chuxorg/projects/14).
 
 ## One authoritative home per concern
 
@@ -22,6 +22,14 @@
 
 Do not promote an INF to REQ merely because the legacy implementation contains it. Record decision rationale, owner approval and scope/phase.
 
+## Approved platform shape and delivery order
+1. **Modular monolith:** PMS, Experiences, Loyalty, Procurement and Operations are separate business modules under a small Platform composition root. See [ADR-0002](adr/ADR-0002-modular-hospitality-platform.md) and the [Dropbox module roadmap](https://www.dropbox.com/scl/fi/5xgvvpevnf8zn75f9qxeh/Hospitality-Module-Delivery-Roadmap.paper?rlkey=dtbk2612z7a9ahxsudkm7638y&dl=0).
+2. **PMS first:** develop a standalone hotel lifecycle from the legacy PMS capability catalog (property, rooms/rates, availability, guests, stays, check-in/out, folio). Legacy source is evidence only; the two reservation table families are unresolved until consultant confirmation.
+3. **Independent Experiences:** cooking Experience is the first demonstration of a later Experiences framework and must operate without PMS.
+4. **Procurement/Operations on demand:** build only ingredient sourcing/receipt or work-order coordination justified by approved vertical slices, not generic ERP. Loyalty joins later through contracts/events.
+5. **Explicit contract/testing:** no direct import of another module's internal domain/ORM or table queries, optional-module startup, contract tests, and realistic PostgreSQL concurrency where necessary. In-memory events are not durable transactions.
+6. Every story records owning module, consumed interfaces, dependency enablement, owned schema/migration, test IDs and owner-approved acceptance rules. Detailed behavior remains Backlog until Ready approval.
+
 ## Story lifecycle
 1. **Discovery/backlog:** ChatGPT and owner convert approved REQ into one bounded GitHub issue; link exact Dropbox doc/version, record story acceptance tests. If requirements are not approved, issue is research/spike, not ready for build.
 2. **Ready:** Clear independent outcome, dependencies, exclusions, and test cases; owner/prioritizer accepts scope.
@@ -41,7 +49,7 @@ Keep stories small enough to review without excessive context. Prefer vertical s
 
 ## Identifier convention
 - Evidence `LEG-RES-001`, inferred needs `INF-RES-001`, approved needs `REQ-RES-001`.
-- Domain codes: RES, AVL, GUE, EXP, VEN, FIN, OPS, SEC, PLT.
+- Domain codes: RES, AVL, GUE, EXP, VEN, FIN, OPS, SEC, PLT, PMS, SRC, LOY.
 - IDs are permanent, never reused, including when documents change; use explicit status (proposed/accepted/superseded) and links.
 - Engineering decisions `ADR-0001`, `ADR-0002`, etc. (see template).
 - GitHub issue `#N` = delivery/story ID; PR `#N` = implementation review ID. Commit references should be traceable through the PR.
@@ -56,8 +64,8 @@ Keep stories small enough to review without excessive context. Prefer vertical s
 - Prefer squash merge; one PR per story; owner authorizes merges; solo work does not require a separate approving review. Document DB migration and rollback when relevant.
 - CI checks are only enforceable when repository branch rules can require them. If branch protection is unavailable, owner must manually ensure green CI and PR review before merge.
 
-## Initial bootstrap limitation
-This repository initially has no selected application language/framework, and therefore no real application test runner. Bootstrap validation only checks repository policy and documentation. When an application stack is chosen, the **first implementation PR** must replace this with real unit tests and CI. Never represent bootstrap checks as unit test coverage.
+## Current test baseline
+PR #6 selected the Python 3.13/FastAPI/SQLAlchemy stack and merged real pytest unit/SQLite integration/PostgreSQL integration/Ruff CI. Extend this suite with each new PMS or module story. The initial scaffold tests do **not** prove business-workflow coverage, module isolation or room-allocation concurrency.
 
 ## Operational ownership
 - **Owner:** business priorities, acceptance, final merge, deployment authorization.
@@ -80,7 +88,7 @@ This repository initially has no selected application language/framework, and th
 - Squash is the only allowed merge method; PR title becomes commit title and PR body preserves issue/requirements/test links. CI validates Conventional Commit PR titles. Merged branches are deleted automatically.
 - Owner authorization is still required before an agent merges; a separate contributor approval is not required.
 - Local pre-commit hook must be installed per `LOCAL_SETUP.md`; CI is the remote gate. Local hooks can be bypassed and do not guarantee secret detection.
-- Application unit/integration tests remain Issue #3; bootstrap success proves only the documented checks. Replace/extend validation and required checks when the stack is selected.
+- Issue #3 / PR #6 closed after real tests, lint and PostgreSQL checks were merged. The required legacy-named bootstrap-validation check now aggregates application test jobs; add architecture/contract/functional checks as implemented.
 - Add `Refs #N` to commit bodies. Map approved REQ IDs and acceptance criteria to test names/comments and record test commands/results in the PR.
 
 ## Project operating procedure
