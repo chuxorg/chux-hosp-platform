@@ -2,7 +2,7 @@
 
 **Status:** First bounded PMS business slice, owner review pending. No guest data, rates, availability, reservations or production authentication.
 **Requirement trace:** LEG-AVL-001/002 → INF-AVL-001 → REQ-PMS-001 → **TST-PMS-001-01**.
-**Discovery:** [Issue #21 legacy evidence and proposed decisions](legacy/PMS-ISSUE21-DISCOVERY.md) (discovery PR #35; proposed scope remains subject to owner review).
+**Discovery:** [Issue #21 legacy evidence and proposed decisions](https://github.com/chuxorg/chux-hosp-platform/blob/docs/21-pms-discovery/docs/legacy/PMS-ISSUE21-DISCOVERY.md) (discovery PR #35; proposed scope remains subject to owner review).
 
 ## Purpose and model
 
