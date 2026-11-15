@@ -13,6 +13,15 @@ Greenfield, **modular Hospitality Platform**: independent PMS, Experiences, Loya
 - [ADR-0002 modular platform architecture](docs/adr/ADR-0002-modular-hospitality-platform.md)
 - [Approved module boundary map (Dropbox)](https://www.dropbox.com/scl/fi/4ia47cl33y9ibtighkm3j/Hospitality-Modular-Platform-Module-Boundaries-and-Integration-Contracts.paper?rlkey=x5zlc6w9s6u2w9yqh94yye8yk&dl=0)
 
+## First PMS module boundary (Issue #20)
+
+The Go composition root mounts a standalone PMS HTTP package at `/pms/v1/`.
+`GET /pms/v1/status` currently reports `{"module":"pms","status":"bootstrap"}`:
+it is a **module wiring diagnostic**, not an implemented hotel operations service.
+No Experiences, Loyalty, Procurement or Operations module is required.
+Read [Module boundaries and composition](docs/MODULES.md) for checked dependency rules,
+data-ownership limitations and the next approved PMS implementation steps.
+
 ## Go/PostgreSQL bootstrap
 
 Go **1.27.4**, standard `net/http`, pgx pooling and PostgreSQL **17**. Goose SQL migrations are embedded in one version-identifiable executable. ADR-0003 replaces Python/SQLite; ADR-0002's modular-monolith boundaries remain unchanged. No business module, Redis or broker is introduced.
