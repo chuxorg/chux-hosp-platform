@@ -25,7 +25,9 @@ func TestRatesAndEligibilityAgainstPostgres(t *testing.T) {
 	databaseURL, pool := openIsolatedPMSDatabase(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 70*time.Second)
 	defer cancel()
-	if v, err := migrations.Run(ctx, databaseURL, "up"); err != nil || v != 3 {
+	latestVersion, err := migrations.Run(ctx, databaseURL, "up")
+	if err != nil || latestVersion < 3 {
+		v := latestVersion
 		t.Fatalf("rate migration: %d %v", v, err)
 	}
 	s := application.NewService(NewStore(pool))
@@ -263,6 +265,11 @@ func TestRatesAndEligibilityAgainstPostgres(t *testing.T) {
 		if err := pool.QueryRow(ctx, "SELECT count(*) FROM pms_rooms").Scan(&rooms); err != nil {
 			t.Fatal(err)
 		}
+		for version := latestVersion; version > 3; version-- {
+			if v, err := migrations.Run(ctx, databaseURL, "down"); err != nil || v != version-1 {
+				t.Fatalf("newer migration rollback: %d %v", v, err)
+			}
+		}
 		if v, err := migrations.Run(ctx, databaseURL, "down"); err != nil || v != 2 {
 			t.Fatalf("rate rollback: %d %v", v, err)
 		}
@@ -280,7 +287,7 @@ func TestRatesAndEligibilityAgainstPostgres(t *testing.T) {
 		if pCount != properties || rCount != rooms {
 			t.Fatal("rate rollback destroyed earlier configuration")
 		}
-		if v, err := migrations.Run(ctx, databaseURL, "up"); err != nil || v != 3 {
+		if v, err := migrations.Run(ctx, databaseURL, "up"); err != nil || v != latestVersion {
 			t.Fatalf("rate reapply: %d %v", v, err)
 		}
 		get(rateURL, 404) // Rolled-back rate data is intentionally not resurrected.
