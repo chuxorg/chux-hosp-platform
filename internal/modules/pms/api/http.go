@@ -19,7 +19,7 @@ type handler struct{ service *application.Service }
 
 // Handler is mounted by the composition root at /pms/v1/.
 // It does not import PostgreSQL implementations or other business modules.
-func Handler(service *application.Service) http.Handler {
+func Handler(service *application.Service, reservations ...*application.ReservationService) http.Handler {
 	h := &handler{service: service}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /status", func(w http.ResponseWriter, _ *http.Request) {
@@ -37,6 +37,9 @@ func Handler(service *application.Service) http.Handler {
 	mux.HandleFunc("PUT /properties/{propertyID}/room-types/{roomTypeID}/rate", h.setRoomTypeRate)
 	mux.HandleFunc("GET /properties/{propertyID}/room-types/{roomTypeID}/rate", h.getRoomTypeRate)
 	mux.HandleFunc("GET /properties/{propertyID}/room-eligibility", h.roomEligibility)
+	if len(reservations) > 0 {
+		registerReservations(mux, reservations[0])
+	}
 	return mux
 }
 
@@ -100,6 +103,8 @@ func fail(w http.ResponseWriter, err error) {
 		writeJSON(w, 404, map[string]string{"error": "not found"})
 	case errors.Is(err, application.ErrReference):
 		writeJSON(w, 422, map[string]string{"error": "invalid property or room type reference"})
+	case errors.Is(err, application.ErrProtected):
+		writeJSON(w, 409, map[string]string{"error": "protected reservation catalog"})
 	case errors.Is(err, application.ErrConflict):
 		writeJSON(w, 409, map[string]string{"error": "duplicate or conflicting configuration"})
 	default:

@@ -16,7 +16,10 @@ func (s *Store) SetRoomTypeRate(ctx context.Context, rate domain.RoomTypeRate) (
 	if err != nil {
 		return domain.RoomTypeRate{}, false, err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback(context.Background())
+	if err = lockCatalog(ctx, tx, rate.PropertyID, rate.RoomTypeID); err != nil {
+		return domain.RoomTypeRate{}, false, classify(err)
+	}
 	err = tx.QueryRow(ctx, `INSERT INTO pms_room_type_rates (property_id,room_type_id,amount_minor,currency,is_active)
 		VALUES ($1,$2,$3,$4,$5) ON CONFLICT (room_type_id) DO NOTHING
 		RETURNING property_id,room_type_id,amount_minor,currency,is_active`, rate.PropertyID, rate.RoomTypeID, rate.AmountMinor, rate.Currency, rate.Active).

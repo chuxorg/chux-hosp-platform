@@ -17,6 +17,7 @@ import (
 func composeHandler(pool *pgxpool.Pool, databaseTimeout time.Duration) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/", platform.Handler(pool, databaseTimeout))
-	mux.Handle("/pms/v1/", http.StripPrefix("/pms/v1", pmsapi.Handler(pmsapp.NewService(pmsdb.NewStore(pool)))))
+	store := pmsdb.NewStore(pool)
+	mux.Handle("/pms/v1/", http.StripPrefix("/pms/v1", pmsapi.Handler(pmsapp.NewService(store), pmsapp.NewReservationService(store))))
 	return mux
 }
