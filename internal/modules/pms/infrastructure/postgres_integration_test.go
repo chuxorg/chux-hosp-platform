@@ -120,8 +120,9 @@ func TestPMSConfigurationAgainstPostgres(t *testing.T) {
 	databaseURL, pool := openIsolatedPMSDatabase(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 70*time.Second)
 	defer cancel()
-	if version, err := migrations.Run(ctx, databaseURL, "up"); err != nil || version != 2 {
-		t.Fatalf("migrate up: version %d err %v", version, err)
+	latestVersion, err := migrations.Run(ctx, databaseURL, "up")
+	if err != nil || latestVersion < 2 {
+		t.Fatalf("migrate up: version %d err %v", latestVersion, err)
 	}
 	h := api.Handler(application.NewService(NewStore(pool)))
 	post := func(path, body string, expect int) []byte {
@@ -227,15 +228,18 @@ func TestPMSConfigurationAgainstPostgres(t *testing.T) {
 	if actual := parseResponse[domain.Room](t, get(roomsURL+"/"+strconv.FormatInt(another.ID, 10), 200)); actual.Number != "OTHER" || !actual.Active {
 		t.Fatalf("failed update modified room: %+v", actual)
 	}
-	// The test database is disposable. Roll back just the PMS migration and reapply.
-	if version, err := migrations.Run(ctx, databaseURL, "down"); err != nil || version != 1 {
-		t.Fatalf("PMS rollback version %d: %v", version, err)
+	// The database is disposable. Remove dependent PMS migrations before the
+	// original configuration migration; retain its rollback assertions.
+	for current := latestVersion; current > 1; current-- {
+		if version, err := migrations.Run(ctx, databaseURL, "down"); err != nil || version != current-1 {
+			t.Fatalf("PMS rollback version %d: %v", version, err)
+		}
 	}
 	var missing bool
 	if err := pool.QueryRow(ctx, "SELECT to_regclass('pms_rooms') IS NULL").Scan(&missing); err != nil || !missing {
 		t.Fatal("PMS rollback left room tables")
 	}
-	if version, err := migrations.Run(ctx, databaseURL, "up"); err != nil || version != 2 {
+	if version, err := migrations.Run(ctx, databaseURL, "up"); err != nil || version != latestVersion {
 		t.Fatalf("PMS reapply version %d: %v", version, err)
 	}
 }

@@ -32,7 +32,13 @@ See the [policy design checklist](docs/POLICY_DESIGN_CHECKLIST.md) and [PMS poli
 
 The first PMS business slice supports **Property → RoomType → individual Room** create/read/replace flows under `/pms/v1/`, using PostgreSQL-owned `pms_*` tables and domain/application/infrastructure/API boundaries. Apply migrations before issuing requests.
 
-See [PMS configuration API, data rules, tests and security caveats](docs/PMS_CONFIGURATION.md). **These endpoints are development-only and have no authentication or tenant authorization**; keep the service on localhost/isolation and use synthetic data. Rates, availability, reservations, guests, folios and optional modules are not implemented.
+See [PMS configuration API, data rules, tests and security caveats](docs/PMS_CONFIGURATION.md). **These endpoints are development-only and have no authentication or tenant authorization**; keep the service on localhost/isolation and use synthetic data. Reservations, guests, folios and optional modules are not implemented.
+
+## PMS nightly rates and inventory eligibility (Issue #23)
+
+Set/read one current positive THB minor-unit nightly rate per RoomType and query eligible physical rooms using hotel-local `[check_in, check_out)` calendar dates. Rate preparation under inactive parents is allowed; search requires the Property, RoomType, Room and rate all active. **This is inventory eligibility, not reservation-aware availability or a booking guarantee.** Results explicitly report `reservation_conflicts_checked: false`, are date-independent for valid intervals, and create no hold/allocation. Reservation-aware behavior belongs to Issue #24.
+
+See [accepted rules, API examples, schema/rollback and TST-PMS-001-02](docs/PMS_RATES_AND_ELIGIBILITY.md). Apply migration `00003_pms_room_type_rates.sql` before using these development-only endpoints. No tax, discount, seasonal/agent rate or stay-total calculation is implemented.
 
 ## Go/PostgreSQL bootstrap
 
@@ -69,4 +75,4 @@ VERSION=0.1.0-dev ./scripts/build.sh
 
 See [local setup](docs/LOCAL_SETUP.md) for configuration, migrations/rollback, race tests, isolated test database safeguards, container builds and standalone deployment. CI verifies Go checks, real PostgreSQL and the container, aggregated by the unchanged required `bootstrap-validation` check. Original PHP, databases, real guest data and credentials stay outside Git.
 
-Implemented packages: `cmd/hospitality` (composition/CLI/server), `internal/platform` (configuration, pooling configuration and HTTP probes), `migrations` (platform-owned SQL). Add module-owned domain/application/infrastructure/API packages only with actual approved stories.
+Implemented packages: `cmd/hospitality` (composition/CLI/server), `internal/platform` (configuration, pooling configuration and HTTP probes), `internal/modules/pms` (owned domain/application/infrastructure/API), and `migrations` (platform- and PMS-owned SQL). Add further modules only with actual approved stories.

@@ -34,6 +34,9 @@ func Handler(service *application.Service) http.Handler {
 	mux.HandleFunc("POST /properties/{propertyID}/rooms", h.createRoom)
 	mux.HandleFunc("GET /properties/{propertyID}/rooms/{roomID}", h.getRoom)
 	mux.HandleFunc("PUT /properties/{propertyID}/rooms/{roomID}", h.updateRoom)
+	mux.HandleFunc("PUT /properties/{propertyID}/room-types/{roomTypeID}/rate", h.setRoomTypeRate)
+	mux.HandleFunc("GET /properties/{propertyID}/room-types/{roomTypeID}/rate", h.getRoomTypeRate)
+	mux.HandleFunc("GET /properties/{propertyID}/room-eligibility", h.roomEligibility)
 	return mux
 }
 
