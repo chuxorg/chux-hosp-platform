@@ -64,30 +64,30 @@ func (s *Store) GetReservationPool(ctx context.Context, p, t int64) (domain.Rese
 
 const reservationColumns = `id,property_id,room_type_id,guest_ref,operator_ref,status,check_in::text,check_out::text,time_zone,currency,nightly_amount_minor,night_count,accommodation_base_subtotal_minor,pool_revision,attestation_ref,capacity_at_confirmation,confirmed_at`
 
-func scanReservation(row pgx.Row) (domain.StayReservation, error) {
+func scanReservation(row pgx.Row, fingerprint ...*string) (domain.StayReservation, error) {
 	var r domain.StayReservation
-	err := row.Scan(&r.ID, &r.PropertyID, &r.RoomTypeID, &r.GuestRef, &r.OperatorRef, &r.Status, &r.CheckIn, &r.CheckOut, &r.TimeZone, &r.BookingTerms.Currency, &r.BookingTerms.NightlyAmountMinor, &r.BookingTerms.NightCount, &r.BookingTerms.AccommodationBaseSubtotalMinor, &r.PoolRevision, &r.AttestationRef, &r.CapacityAtConfirmation, &r.ConfirmedAt)
+	columns := []any{&r.ID, &r.PropertyID, &r.RoomTypeID, &r.GuestRef, &r.OperatorRef, &r.Status, &r.CheckIn, &r.CheckOut, &r.TimeZone, &r.BookingTerms.Currency, &r.BookingTerms.NightlyAmountMinor, &r.BookingTerms.NightCount, &r.BookingTerms.AccommodationBaseSubtotalMinor, &r.PoolRevision, &r.AttestationRef, &r.CapacityAtConfirmation, &r.ConfirmedAt}
+	for _, value := range fingerprint {
+		columns = append(columns, value)
+	}
+	err := row.Scan(columns...)
 	r.InventoryBasis = domain.PoolScope + "_pool"
 	r.BookingTerms.Version = 1
 	return r, err
 }
 func (s *Store) GetReservation(ctx context.Context, p, id int64) (domain.StayReservation, error) {
-	r, err := scanReservation(s.pool.QueryRow(ctx, "SELECT "+reservationColumns+" FROM pms_stay_reservations WHERE property_id=$1 AND id=$2", p, id))
+	r, err := scanReservation(s.pool.QueryRow(ctx, "SELECT "+reservationColumns+" FROM pms_current_stay_reservations WHERE property_id=$1 AND id=$2", p, id))
 	return r, classify(err)
 }
 func lookupKey(ctx context.Context, q interface {
 	QueryRow(context.Context, string, ...any) pgx.Row
 }, c application.ReservationCommand) (domain.StayReservation, error) {
-	var id int64
-	var fp string
-	err := q.QueryRow(ctx, "SELECT id,fingerprint FROM pms_stay_reservations WHERE property_id=$1 AND idempotency_key=$2", c.PropertyID, c.Key).Scan(&id, &fp)
-	if err != nil {
-		return domain.StayReservation{}, err
-	}
-	if fp != c.Fingerprint {
+	var fingerprint string
+	r, err := scanReservation(q.QueryRow(ctx, "SELECT "+reservationColumns+",fingerprint FROM pms_current_stay_reservations WHERE property_id=$1 AND idempotency_key=$2", c.PropertyID, c.Key), &fingerprint)
+	if err == nil && fingerprint != c.Fingerprint {
 		return domain.StayReservation{}, application.ErrIdempotencyConflict
 	}
-	return scanReservation(q.QueryRow(ctx, "SELECT "+reservationColumns+" FROM pms_stay_reservations WHERE property_id=$1 AND id=$2", c.PropertyID, id))
+	return r, err
 }
 
 // transactionAttempt is kept typed and local so failure tests can exercise the
@@ -220,7 +220,7 @@ func (s *Store) confirmOnce(ctx context.Context, c application.ReservationComman
 	if err != nil {
 		return empty, false, err
 	}
-	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pms_reservation_inventory_commitments WHERE property_id=$1 AND room_type_id=$2 AND night >= $3::date AND night < $4::date GROUP BY night HAVING count(*) >= $5)`, c.PropertyID, c.Input.RoomTypeID, c.Input.CheckIn, c.Input.CheckOut, stock).Scan(&exhausted)
+	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM pms_consuming_inventory_commitments WHERE property_id=$1 AND room_type_id=$2 AND night >= $3::date AND night < $4::date GROUP BY night HAVING count(*) >= $5)`, c.PropertyID, c.Input.RoomTypeID, c.Input.CheckIn, c.Input.CheckOut, stock).Scan(&exhausted)
 	if err != nil {
 		return empty, false, err
 	}
@@ -244,7 +244,7 @@ func (s *Store) confirmOnce(ctx context.Context, c application.ReservationComman
 	if err != nil {
 		return empty, false, err
 	}
-	r, err := scanReservation(tx.QueryRow(ctx, "SELECT "+reservationColumns+" FROM pms_stay_reservations WHERE id=$1", id))
+	r, err := scanReservation(tx.QueryRow(ctx, "SELECT "+reservationColumns+" FROM pms_current_stay_reservations WHERE id=$1", id))
 	if err != nil {
 		return empty, false, err
 	}

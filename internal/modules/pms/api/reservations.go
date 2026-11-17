@@ -10,6 +10,7 @@ import (
 )
 
 func registerReservations(mux *http.ServeMux, s *application.ReservationService) {
+	registerCancellations(mux, s)
 	mux.HandleFunc("PUT /properties/{propertyID}/room-types/{roomTypeID}/reservation-pool", func(w http.ResponseWriter, r *http.Request) {
 		p, err := pathID(r, "propertyID")
 		if err != nil {
@@ -111,6 +112,8 @@ func reservationFail(w http.ResponseWriter, err error) {
 	case errors.Is(err, application.ErrPoolRequired):
 		code = 412
 	case errors.Is(err, application.ErrInactive), errors.Is(err, application.ErrPriceChanged), errors.Is(err, application.ErrInventoryExhausted), errors.Is(err, application.ErrIdempotencyConflict), errors.Is(err, application.ErrProtected):
+		code = 409
+	case errors.Is(err, application.ErrAlreadyCancelled), errors.Is(err, application.ErrCancellationCutoff):
 		code = 409
 	case errors.Is(err, application.ErrTechnicalLimit), errors.Is(err, application.ErrPastDate):
 		code = 422

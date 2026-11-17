@@ -158,6 +158,8 @@ func classify(err error) error {
 	var pge *pgconn.PgError
 	if errors.As(err, &pge) {
 		switch pge.Code {
+		case "P4301":
+			return application.ErrCancellationCutoff
 		case "P2403":
 			return application.ErrProtected
 		case "P2402":

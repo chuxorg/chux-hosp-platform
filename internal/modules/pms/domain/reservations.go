@@ -25,7 +25,7 @@ type BookingTerms struct {
 	AccommodationBaseSubtotalMinor int64  `json:"accommodation_base_subtotal_minor"`
 }
 
-// StayReservation consumes pooled nights, without assigning a physical Room.
+// StayReservation contains the current lifecycle status and original booking terms.
 type StayReservation struct {
 	ID                     int64        `json:"id"`
 	PropertyID             int64        `json:"property_id"`
@@ -42,4 +42,15 @@ type StayReservation struct {
 	AttestationRef         string       `json:"attestation_ref"`
 	CapacityAtConfirmation int64        `json:"capacity_at_confirmation"`
 	ConfirmedAt            time.Time    `json:"confirmed_at"`
+}
+
+type ReservationCancellation struct {
+	ReservationID   int64     `json:"reservation_id"`
+	PropertyID      int64     `json:"property_id"`
+	RoomTypeID      int64     `json:"room_type_id"`
+	OperatorRef     string    `json:"operator_ref"`
+	ReasonRef       string    `json:"reason_ref"`
+	Status          string    `json:"status"`
+	CancelledAt     time.Time `json:"cancelled_at"`
+	ContractVersion int       `json:"contract_version"`
 }

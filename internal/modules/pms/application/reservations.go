@@ -54,6 +54,8 @@ type ReservationCommand struct {
 }
 
 type ReservationStore interface {
+	CancelReservation(context.Context, CancellationCommand) (domain.ReservationCancellation, bool, error)
+	GetReservationCancellation(context.Context, int64, int64) (domain.ReservationCancellation, error)
 	SetReservationPool(context.Context, domain.ReservationPool) (domain.ReservationPool, error)
 	GetReservationPool(context.Context, int64, int64) (domain.ReservationPool, error)
 	ConfirmReservation(context.Context, ReservationCommand) (domain.StayReservation, bool, error)

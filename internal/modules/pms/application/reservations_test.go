@@ -35,6 +35,18 @@ func (f *reservationFake) ConfirmReservation(ctx context.Context, c ReservationC
 	return domain.StayReservation{ID: 7}, false, nil
 }
 
+func (f *reservationFake) CancelReservation(ctx context.Context, c CancellationCommand) (domain.ReservationCancellation, bool, error) {
+	f.calls++
+	if _, ok := ctx.Deadline(); !ok {
+		panic("cancellation requires a deadline")
+	}
+	return domain.ReservationCancellation{ReservationID: c.ReservationID}, false, nil
+}
+func (f *reservationFake) GetReservationCancellation(context.Context, int64, int64) (domain.ReservationCancellation, error) {
+	f.calls++
+	return domain.ReservationCancellation{}, nil
+}
+
 func validConfirmation() ConfirmReservation {
 	return ConfirmReservation{RoomTypeID: 2, GuestRef: "SYN-GUEST-1", OperatorRef: "SYN-OP-1", CheckIn: "2028-02-28", CheckOut: "2028-03-01", Currency: "THB", ExpectedNightlyRateMinor: 12500}
 }
