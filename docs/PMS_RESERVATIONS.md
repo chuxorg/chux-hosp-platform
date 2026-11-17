@@ -39,7 +39,7 @@ letter/digit; surrounding whitespace is normalized. Never put PII in references.
   Changing any semantic input with the same key conflicts. Rolled-back failures
   retain no key. Replay precedes current price, active flags, pool and local-date
   checks, so lost responses remain recoverable after configuration changes.
-- `GET /properties/{p}/stay-reservations/{id}`: property-scoped immutable snapshot;
+- `GET /properties/{p}/stay-reservations/{id}`: property-scoped current status and immutable booking terms;
   wrong property/unknown ID returns 404.
 
 Booking terms version 1: positive current nightly THB minor amount, calendar
@@ -130,7 +130,51 @@ is deterministically fault-injected around a real PostgreSQL commit; SQLSTATE re
 faults are injected at the transaction-attempt boundary. This does not emulate
 all operating-system/network partitions. Physical assignment tests remain deferred.
 
-No cancellations, extensions, room assignment, RatePlans, market allotments,
+Extensions, room assignment, RatePlans, market allotments,
 manager-approved transfers, real guest profiles, tax/folio/payments, operational
 policy UI or generic policy framework is implemented. Future authorized lifecycle
 changes must preserve this append-only inventory/price evidence and current stock.
+
+
+## Pre-arrival cancellation — Issue #43
+
+[REQ-PMS-003, specification revision 12](https://www.dropbox.com/scl/fi/zu6lowh2qhiumdxenbbvy/03-Approved-Greenfield-Specification-REQ.paper?dl=0) and
+[TST-PMS-001-07, catalog revision 9](https://www.dropbox.com/scl/fi/4ds7lh5avgridmjx8gz2x/Hospitality-Pilot-Rules-Acceptance-and-Traceability.paper?dl=0)
+cover the development-only synthetic cohort.
+
+- POST `/properties/{p}/stay-reservations/{id}/cancellation` with one UUID
+  `Idempotency-Key` and `{"operator_ref":"SYN-OP-001","reason_ref":"SYN-REASON-001"}`.
+  Both references follow the existing synthetic-reference bounds. The first
+  committed full cancellation returns 201 and Location. An identical command
+  replays the original event with 200, even after cutoff. A changed command
+  under the same property key, a different key on an already cancelled stay,
+  or a new request on or after the local check-in date returns 409.
+- GET the same resource for the original immutable cancellation event.
+  A missing or foreign-property reservation or a missing event returns 404.
+  Reservation GET and original confirmation replay return current status and
+  the original accepted terms. Cancellation and confirmation keys are independent.
+- The primary PostgreSQL clock supplies the decision timestamp after Property
+  SHARE, RoomType UPDATE and Reservation UPDATE locks. The original booking
+  time zone determines the local date. Inactive sales configuration and pool
+  closure still permit a valid pre-arrival cancellation. Operator and reason
+  references are synthetic evidence. The operation has zero financial or
+  physical-room-assignment side effects.
+
+Migration 00005 adds the immutable singleton event and derives current status
+and consuming nights from it. Original booking rows and nightly commitments
+remain the historical ledger. Capacity and the backing-stock freeze use
+consuming commitments. Enabled pools still freeze backing stock, and the
+property time zone remains frozen after any booking.
+
+Drain all old application instances, apply 00005, and start the updated
+application before exposing cancellation. Old instances read historical demand
+and historical status, so a mixed-version rollout is unsafe. Before the first
+cancellation, an authorized rollback may run 00005 down under exclusive locks
+and then restart the old binary. Once any cancellation exists, downgrade
+refuses even when its nights have been resold. Plan for forward repair from
+that point. Keep these endpoints on the trusted synthetic demo environment.
+
+The cancellation PostgreSQL integration suite traces REQ-PMS-003 and cases
+07-A through 07-M to evidence/resale, key races, lock ordering, commit recovery,
+raw SQL, cutoff, API and migration tests. Case 07-N is covered by the existing
+confirmation regression suites, the full validator and the four quality jobs.
