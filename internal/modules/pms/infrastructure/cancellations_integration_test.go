@@ -211,7 +211,7 @@ func TestCancellationKeyRaces(t *testing.T) {
 func TestCancellationRetryAndCommitRecovery(t *testing.T) {
 	f := newBookingFixture(t, 3)
 	f.enroll(f.typ.ID, true)
-	for _, state := range []string{"40001", "40P01", "lost acknowledgment"} {
+	for _, state := range []string{"40001", "40P01", "lost acknowledgment", "disconnect before commit"} {
 		t.Run(state, func(t *testing.T) {
 			a := confirmedStay(t, f, f.input, f.nextKey())
 			cmd, err := application.NormalizeCancellation(f.p.ID, a.ID, f.nextKey(), cancellationInput)
@@ -225,6 +225,17 @@ func TestCancellationRetryAndCommitRecovery(t *testing.T) {
 					t.Fatal("retry changed command")
 				}
 				if calls == 1 && state != "lost acknowledgment" {
+					if state == "disconnect before commit" {
+						tx, err := f.pool.Begin(ctx)
+						if err != nil {
+							return domain.ReservationCancellation{}, false, err
+						}
+						defer tx.Rollback(ctx)
+						if _, err = tx.Exec(ctx, rawCancellation, a.ID, f.p.ID, f.typ.ID, c.Key, c.Fingerprint); err != nil {
+							return domain.ReservationCancellation{}, false, err
+						}
+						return domain.ReservationCancellation{}, false, &unknownCommit{cause: errors.New("connection lost before commit")}
+					}
 					return domain.ReservationCancellation{}, false, &pgconn.PgError{Code: state}
 				}
 				event, replay, err := f.store.cancelOnce(ctx, c)
@@ -238,7 +249,7 @@ func TestCancellationRetryAndCommitRecovery(t *testing.T) {
 			}
 		})
 	}
-	countCancellationState(t, f, 3, 0)
+	countCancellationState(t, f, 4, 0)
 }
 
 // REQ-PMS-003 / TST-PMS-001-07-I/J/K: the database protects the original calendar and evidence.
@@ -561,16 +572,17 @@ func TestCancellationCutoffAcrossLocalMidnight(t *testing.T) {
 		t.Fatal(err)
 	}
 	keyA, keyB := f.nextKey(), f.nextKey()
-	event, replay, err := f.service.Cancel(f.ctx, f.p.ID, a.ID, keyA, cancellationInput)
-	if err != nil || replay || !event.CancelledAt.Equal(time.Date(2099, 11, 1, 3, 59, 59, 0, time.UTC)) {
-		t.Fatalf("pre-midnight decision: %+v %v", event, err)
+	cmd, err := application.NormalizeCancellation(f.p.ID, a.ID, keyA, cancellationInput)
+	if err != nil {
+		t.Fatal(err)
 	}
 	blocker, err := f.pool.Begin(f.ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer blocker.Rollback(f.ctx)
-	if _, err = blocker.Exec(f.ctx, "SELECT id FROM pms_room_types WHERE id=$1 FOR UPDATE", f.typ.ID); err != nil {
+	// The first decision is recorded before midnight and commits after it.
+	if _, err = blocker.Exec(f.ctx, rawCancellation, a.ID, f.p.ID, f.typ.ID, keyA, cmd.Fingerprint); err != nil {
 		t.Fatal(err)
 	}
 	done := make(chan error, 1)
@@ -584,6 +596,10 @@ func TestCancellationCutoffAcrossLocalMidnight(t *testing.T) {
 	}
 	if err = blocker.Commit(f.ctx); err != nil {
 		t.Fatal(err)
+	}
+	event, err := f.service.GetCancellation(f.ctx, f.p.ID, a.ID)
+	if err != nil || !event.CancelledAt.Equal(time.Date(2099, 11, 1, 3, 59, 59, 0, time.UTC)) {
+		t.Fatalf("pre-midnight decision committed after midnight: %+v %v", event, err)
 	}
 	if err = <-done; !errors.Is(err, application.ErrCancellationCutoff) {
 		t.Fatalf("waiter did not use post-lock cutoff: %v", err)

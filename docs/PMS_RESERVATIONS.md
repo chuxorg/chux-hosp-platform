@@ -132,9 +132,8 @@ all operating-system/network partitions. Physical assignment tests remain deferr
 
 Extensions, room assignment, RatePlans, market allotments,
 manager-approved transfers, real guest profiles, tax/folio/payments, operational
-policy UI or generic policy framework is implemented. Future authorized lifecycle
-changes must preserve this append-only inventory/price evidence and current stock.
-
+policy UI and a generic policy framework remain outside this slice. Future lifecycle
+changes must preserve the append-only inventory and price evidence.
 
 ## Pre-arrival cancellation — Issue #43
 
