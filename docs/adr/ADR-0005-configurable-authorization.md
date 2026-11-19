@@ -14,7 +14,7 @@ Groups must remain resource-neutral. A group may represent an organization, depa
 
 1. **Separate authentication from authorization.** A trusted identity provider authenticates users. The Hospitality platform evaluates what an authenticated user may do. The platform will not implement its own password-authentication system.
 
-2. **Use OpenID Connect as the identity-provider integration target.** The specific provider and session design remain open pending deployment and operational requirements.
+2. **Use Auth0 as the initial hosted identity provider through OpenID Connect (OIDC).** Keep the application integration OIDC-based so the provider can be changed later without redesigning application authorization. Auth0 handles authentication and identity; it does not own Hospitality group membership, resource grants, roles, or permissions.
 
 3. **Use Casbin as the authorization policy evaluator.** Casbin will evaluate access decisions in the Go application. The platform remains the system of record for users, group membership, role assignments, permissions, and resource grants.
 
@@ -34,13 +34,14 @@ Groups must remain resource-neutral. A group may represent an organization, depa
 - **Hard-coded role checks:** rejected because adding or changing roles would require application-code changes.
 - **Property-bound groups:** rejected because authorization must support non-property resources and organizational contexts.
 - **OPA or OpenFGA:** not selected. Casbin's domain-scoped RBAC appears to fit the current group-scoped role model with less additional infrastructure; revisit if policy needs outgrow this model.
+- **ZITADEL Cloud:** considered as a hosted OIDC provider. Auth0 was selected for its larger monthly-active-user free allowance and longer inactivity window for an intermittently operated demo.
 
 ## Consequences and risks
 
 - The Go API needs authentication middleware, authorization checks, and resource-scope enforcement before protected operations are exposed to real users.
 - The data model must represent users, groups, role definitions, permissions, group-scoped user-role assignments, and explicit group-to-resource grants.
 - Authorization decisions require tests for allowed and denied requests, including cross-group and cross-resource cases.
-- The identity provider, sign-in/session flow, user provisioning, and administration experience remain unresolved.
+- The Auth0 tenant, sign-in/session flow, user provisioning, and administration experience must be configured. The free Auth0 tenant is subject to deletion after 150 days of inactivity; the operator must keep it active through dashboard activity or tenant usage and heed inactivity warnings.
 - Casbin evaluates policy; it does not replace the platform's ownership of authorization data or resource checks.
 - This design adds upfront implementation work, including identity-provider integration and protected API enforcement, before the UI can safely rely on user roles.
 - The authorization model must prevent a group assignment or role permission from implicitly granting access to unrelated resources.
@@ -56,5 +57,6 @@ Before implementation, validate the model against concrete PMS and organization-
 - A user may hold different roles in different groups.
 - An authenticated user without the required assignment or resource grant is denied.
 - The API denies access even when a client manually invokes an operation hidden by the UI.
+- Auth0-issued identity tokens are validated against the configured issuer and audience, and authorization decisions continue to use platform-owned group/resource data.
 
-Review this ADR when selecting the identity provider and session design, or if authorization requirements require resource relationships or policy logic beyond Casbin's role-and-domain model.
+Review this ADR if the OIDC provider or session design changes, or if authorization requirements require resource relationships or policy logic beyond Casbin's role-and-domain model.
