@@ -2,6 +2,10 @@
 
 Use **Go 1.27.4** (`.go-version` and `go.mod`), Git, Docker Engine **27+** / Docker Desktop with Linux containers, and Docker Compose **v2.24+**. No Python, SQLite or Redis runtime is required. `scripts/*.sh` select the pinned Go toolchain; a Go installation supporting automatic toolchain downloads can fetch it. Direct `go` commands also respect the minimum version in `go.mod`. Keep real credentials, legacy source, databases and guest data outside Git.
 
+For the Mac Auth0 localhost sign-in/sign-out test, use the
+[authentication runbook](AUTHENTICATION.md#mac-localhost-test--issue-52) and its
+ignored `.env.local` configuration. It reuses these Compose services.
+
 ## Host application, Docker PostgreSQL
 
 ```bash
