@@ -71,6 +71,16 @@ hospitality auth revoke-user \
   --subject 'auth0|stable-subject'
 ```
 
+## Logout return parameters
+
+The discovered OIDC `end_session_endpoint` receives `client_id` and
+`post_logout_redirect_uri=OIDC_LOGOUT_RETURN_URL`. Only the Auth0 `/v2/logout`
+fallback (when discovery omits that endpoint) uses legacy `returnTo`. Register
+the same exact return URL under the Auth0 application's **Allowed Logout URLs**;
+changing the local environment value alone does not update Auth0's allowlist.
+See [OIDC logout](https://auth0.com/docs/authenticate/login/logout/log-users-out-of-auth0)
+and [legacy logout](https://auth0.com/docs/authenticate/login/logout/redirect-users-after-logout).
+
 ## Browser behavior
 
 The callback validates Auth0's signature, issuer, audience and expiry using
