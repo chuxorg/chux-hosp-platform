@@ -202,6 +202,9 @@ func TestPooledReservationContract(t *testing.T) {
 	if _, _, e := f.service.Confirm(f.ctx, f.p.ID, failedKey, partial); e != nil {
 		t.Fatalf("failed key retained: %v", e)
 	}
+	if v, e := migrations.Run(f.ctx, f.url, "down"); e != nil || v != 5 {
+		t.Fatalf("auth rollback: %d %v", v, e)
+	}
 	if v, e := migrations.Run(f.ctx, f.url, "down"); e != nil || v != 4 {
 		t.Fatalf("no-cancellation rollback: %d %v", v, e)
 	}

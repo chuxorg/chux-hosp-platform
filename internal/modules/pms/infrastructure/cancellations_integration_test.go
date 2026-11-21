@@ -631,6 +631,9 @@ func TestCancellationDowngradeRace(t *testing.T) {
 	f := newBookingFixture(t, 1)
 	f.enroll(f.typ.ID, true)
 	a := confirmedStay(t, f, f.input, f.nextKey())
+	if version, downErr := migrations.Run(f.ctx, f.url, "down"); downErr != nil || version != 5 {
+		t.Fatalf("auth down before race: %d %v", version, downErr)
+	}
 	cmd, _ := application.NormalizeCancellation(f.p.ID, a.ID, f.nextKey(), cancellationInput)
 	tx, err := f.pool.Begin(f.ctx)
 	if err != nil {
