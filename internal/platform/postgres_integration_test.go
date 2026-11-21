@@ -6,12 +6,14 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"testing"
 	"time"
 
+	platformauth "github.com/chuxorg/chux-hosp-platform/internal/platform/auth"
 	"github.com/chuxorg/chux-hosp-platform/migrations"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -142,6 +144,51 @@ func TestPostgresLifecycle(t *testing.T) {
 		}
 		if _, err := pool.Exec(ctx, "INSERT INTO platform_metadata (key,value) VALUES ('commit_test','duplicate')"); err == nil {
 			t.Fatal("primary key missing")
+		}
+	})
+	t.Run("authentication persistence and immediate revocation", func(t *testing.T) {
+		store := platformauth.NewStore(pool)
+		userID, err := store.ProvisionUser(ctx, "https://tenant.example/", "auth0|synthetic", "Synthetic Operator")
+		if err != nil || userID < 1 {
+			t.Fatalf("provision user: id=%d err=%v", userID, err)
+		}
+		stateHash := make([]byte, 32)
+		nonceHash := make([]byte, 32)
+		stateHash[0], nonceHash[0] = 1, 2
+		if err := store.CreateLogin(ctx, stateHash, nonceHash, "synthetic-pkce-verifier", time.Now().Add(time.Minute)); err != nil {
+			t.Fatal(err)
+		}
+		login, err := store.ConsumeLogin(ctx, stateHash)
+		if err != nil || login.PKCEVerifier != "synthetic-pkce-verifier" {
+			t.Fatalf("consume login: %#v %v", login, err)
+		}
+		if _, err := store.ConsumeLogin(ctx, stateHash); !errors.Is(err, platformauth.ErrNotFound) {
+			t.Fatal("login transaction replay was accepted")
+		}
+		sessionHash, csrfHash := make([]byte, 32), make([]byte, 32)
+		sessionHash[0], csrfHash[0] = 3, 4
+		now := time.Now()
+		if err := store.CreateSession(ctx, userID, sessionHash, csrfHash, now.Add(time.Hour), now.Add(2*time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+		session, err := store.Authenticate(ctx, sessionHash, time.Hour, true)
+		if err != nil || session.ID != userID || session.DisplayName != "Synthetic Operator" {
+			t.Fatalf("authenticate: %#v %v", session, err)
+		}
+		if err := store.RevokeUser(ctx, "https://tenant.example/", "auth0|synthetic"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := store.Authenticate(ctx, sessionHash, time.Hour, true); !errors.Is(err, platformauth.ErrNotFound) {
+			t.Fatal("revoked user retained an active session")
+		}
+		if v, err := migrations.Run(ctx, databaseURL, "down"); err == nil || v != 0 {
+			t.Fatalf("populated authentication rollback was not refused: version=%d err=%v", v, err)
+		}
+		if _, err := pool.Exec(ctx, `DELETE FROM platform_sessions`); err != nil {
+			t.Fatal("remove isolated session fixture:", err)
+		}
+		if _, err := pool.Exec(ctx, `DELETE FROM platform_users`); err != nil {
+			t.Fatal("remove isolated authentication fixture:", err)
 		}
 	})
 	t.Run("migration rollback and reapply", func(t *testing.T) {
