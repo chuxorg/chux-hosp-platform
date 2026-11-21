@@ -24,6 +24,11 @@ func TestLoadConfig(t *testing.T) {
 		{"unbounded timeout", map[string]string{"DATABASE_URL": "postgres://localhost/db", "DATABASE_TIMEOUT": "31s"}, true},
 		{"zero timeout", map[string]string{"DATABASE_URL": "postgres://localhost/db", "DATABASE_TIMEOUT": "0s"}, true},
 		{"invalid timeout", map[string]string{"DATABASE_URL": "postgres://localhost/db", "DATABASE_TIMEOUT": "forever"}, true},
+		{"auth defaults", map[string]string{"DATABASE_URL": "postgres://localhost/db", "AUTH_ENABLED": "true", "OIDC_ISSUER_URL": "https://tenant.example/", "OIDC_CLIENT_ID": "client", "OIDC_CLIENT_SECRET": "secret", "OIDC_REDIRECT_URL": "https://app.example/auth/v1/callback", "OIDC_LOGOUT_RETURN_URL": "https://app.example/"}, false},
+		{"auth missing secret", map[string]string{"DATABASE_URL": "postgres://localhost/db", "AUTH_ENABLED": "true", "OIDC_ISSUER_URL": "https://tenant.example/", "OIDC_CLIENT_ID": "client", "OIDC_REDIRECT_URL": "https://app.example/auth/v1/callback", "OIDC_LOGOUT_RETURN_URL": "https://app.example/"}, true},
+		{"auth insecure deployed redirect", map[string]string{"DATABASE_URL": "postgres://localhost/db", "AUTH_ENABLED": "true", "OIDC_ISSUER_URL": "https://tenant.example/", "OIDC_CLIENT_ID": "client", "OIDC_CLIENT_SECRET": "secret", "OIDC_REDIRECT_URL": "http://localhost:8000/auth/v1/callback", "OIDC_LOGOUT_RETURN_URL": "http://localhost:8000/"}, true},
+		{"auth explicit local HTTP", map[string]string{"DATABASE_URL": "postgres://localhost/db", "AUTH_ENABLED": "true", "AUTH_ALLOW_INSECURE_HTTP": "true", "OIDC_ISSUER_URL": "https://tenant.example/", "OIDC_CLIENT_ID": "client", "OIDC_CLIENT_SECRET": "secret", "OIDC_REDIRECT_URL": "http://localhost:8000/auth/v1/callback", "OIDC_LOGOUT_RETURN_URL": "http://localhost:8000/"}, false},
+		{"auth invalid lifetime", map[string]string{"DATABASE_URL": "postgres://localhost/db", "AUTH_ENABLED": "true", "OIDC_ISSUER_URL": "https://tenant.example/", "OIDC_CLIENT_ID": "client", "OIDC_CLIENT_SECRET": "secret", "OIDC_REDIRECT_URL": "https://app.example/auth/v1/callback", "OIDC_LOGOUT_RETURN_URL": "https://app.example/", "AUTH_SESSION_IDLE_TIMEOUT": "13h", "AUTH_SESSION_ABSOLUTE_LIFETIME": "12h"}, true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			c, err := LoadConfig(func(k string) string { return tt.env[k] })
@@ -45,6 +50,9 @@ func TestLoadConfig(t *testing.T) {
 			}
 			if tt.name == "defaults" && (c.HTTPAddr != "127.0.0.1:8000" || c.DatabaseTimeout != 2*time.Second) {
 				t.Fatal("unexpected defaults")
+			}
+			if tt.name == "auth defaults" && (!c.Auth.Enabled || !c.Auth.CookieSecure || c.Auth.SessionIdleTimeout != 8*time.Hour || c.Auth.SessionAbsoluteLife != 12*time.Hour) {
+				t.Fatal("unexpected authentication defaults")
 			}
 		})
 	}

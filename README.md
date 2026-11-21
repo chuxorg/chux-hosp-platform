@@ -8,6 +8,7 @@ Greenfield, **modular Hospitality Platform**: independent PMS, Experiences, Loya
 - [Codex instructions](AGENTS.md)
 - [SDLC](docs/SDLC.md)
 - [Local setup and tests](docs/LOCAL_SETUP.md)
+- [Auth0 OIDC browser authentication](docs/AUTHENTICATION.md)
 - [ADR-0001 historical Python decision (superseded)](docs/adr/ADR-0001-python-fastapi-postgres.md)
 - [ADR-0003 Go and PostgreSQL replacement decision](docs/adr/ADR-0003-go-postgres-defer-redis.md)
 - [ADR-0002 modular platform architecture](docs/adr/ADR-0002-modular-hospitality-platform.md)

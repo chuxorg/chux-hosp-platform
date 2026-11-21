@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -33,5 +34,23 @@ func TestPMSOnlyComposition(t *testing.T) {
 				t.Fatalf("body = %q, want %q", w.Body.String(), tc.wantBody)
 			}
 		})
+	}
+}
+
+// ADR-0005 / Issue #49: enabling authentication must not accidentally grant
+// access before the permission/resource authorization slice exists.
+func TestAuthenticationDoesNotExposePMS(t *testing.T) {
+	auth := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
+	handler := composeHandler(nil, time.Second, auth)
+
+	authResponse := httptest.NewRecorder()
+	handler.ServeHTTP(authResponse, httptest.NewRequest(http.MethodGet, "/auth/v1/session", nil))
+	if authResponse.Code != http.StatusNoContent {
+		t.Fatal("authentication handler was not mounted")
+	}
+	pmsResponse := httptest.NewRecorder()
+	handler.ServeHTTP(pmsResponse, httptest.NewRequest(http.MethodGet, "/pms/v1/status", nil))
+	if pmsResponse.Code != http.StatusForbidden || pmsResponse.Body.String() != "{\"error\":\"authorization not configured\"}\n" {
+		t.Fatalf("PMS did not fail closed: %d %q", pmsResponse.Code, pmsResponse.Body.String())
 	}
 }
