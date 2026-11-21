@@ -23,11 +23,12 @@ type IdentityProvider interface {
 }
 
 type OIDCProvider struct {
-	issuer     string
-	clientID   string
-	endSession string
-	oauth      oauth2.Config
-	verifier   *oidc.IDTokenVerifier
+	issuer       string
+	clientID     string
+	endSession   string
+	legacyLogout bool
+	oauth        oauth2.Config
+	verifier     *oidc.IDTokenVerifier
 }
 
 func NewOIDCProvider(ctx context.Context, issuer, clientID, clientSecret, redirectURL string) (*OIDCProvider, error) {
@@ -41,15 +42,17 @@ func NewOIDCProvider(ctx context.Context, issuer, clientID, clientSecret, redire
 	if err := provider.Claims(&metadata); err != nil {
 		return nil, errors.New("OIDC metadata is invalid")
 	}
-	if metadata.EndSessionEndpoint == "" {
+	legacyLogout := metadata.EndSessionEndpoint == ""
+	if legacyLogout {
 		metadata.EndSessionEndpoint = strings.TrimRight(issuer, "/") + "/v2/logout"
 	}
 	return &OIDCProvider{
-		issuer:     issuer,
-		clientID:   clientID,
-		endSession: metadata.EndSessionEndpoint,
-		oauth:      oauth2.Config{ClientID: clientID, ClientSecret: clientSecret, Endpoint: provider.Endpoint(), RedirectURL: redirectURL, Scopes: []string{oidc.ScopeOpenID, "profile"}},
-		verifier:   provider.Verifier(&oidc.Config{ClientID: clientID}),
+		issuer:       issuer,
+		clientID:     clientID,
+		endSession:   metadata.EndSessionEndpoint,
+		legacyLogout: legacyLogout,
+		oauth:        oauth2.Config{ClientID: clientID, ClientSecret: clientSecret, Endpoint: provider.Endpoint(), RedirectURL: redirectURL, Scopes: []string{oidc.ScopeOpenID, "profile"}},
+		verifier:     provider.Verifier(&oidc.Config{ClientID: clientID}),
 	}, nil
 }
 
@@ -95,7 +98,13 @@ func (p *OIDCProvider) LogoutURL(returnTo string) (string, error) {
 	}
 	q := u.Query()
 	q.Set("client_id", p.clientID)
-	q.Set("returnTo", returnTo)
+	if p.legacyLogout {
+		q.Del("post_logout_redirect_uri")
+		q.Set("returnTo", returnTo)
+	} else {
+		q.Del("returnTo")
+		q.Set("post_logout_redirect_uri", returnTo)
+	}
 	u.RawQuery = q.Encode()
 	return u.String(), nil
 }
