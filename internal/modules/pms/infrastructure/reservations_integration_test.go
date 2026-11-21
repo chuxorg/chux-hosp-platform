@@ -48,7 +48,7 @@ func newBookingFixture(t *testing.T, n int) *bookingFixture {
 	url, pool := openIsolatedPMSDatabase(t)
 	ctx := context.Background()
 	latest, err := migrations.Run(ctx, url, "up")
-	if err != nil || latest != 5 {
+	if err != nil || latest != 6 {
 		t.Fatalf("migration %d: %v", latest, err)
 	}
 	f := &bookingFixture{t: t, ctx: ctx, url: url, pool: pool, store: NewStore(pool)}
@@ -133,12 +133,12 @@ func TestPooledReservationContract(t *testing.T) {
 		t.Fatalf("unenrolled: %v", e)
 	}
 	// Empty migration rollback/reapply must preserve previous catalog/rates.
-	for _, version := range []int64{4, 3} {
+	for _, version := range []int64{5, 4, 3} {
 		if v, e := migrations.Run(f.ctx, f.url, "down"); e != nil || v != version {
 			t.Fatalf("empty down: %d %v", v, e)
 		}
 	}
-	if v, e := migrations.Run(f.ctx, f.url, "up"); e != nil || v != 5 {
+	if v, e := migrations.Run(f.ctx, f.url, "up"); e != nil || v != 6 {
 		t.Fatalf("reapply: %d %v", v, e)
 	}
 	f.enroll(f.typ.ID, true)
