@@ -333,6 +333,7 @@ func TestCancellationMigration(t *testing.T) {
 	f.enroll(f.typ.ID, true)
 	down := func() {
 		t.Helper()
+		f.downToAuthSessions()
 		if version, err := migrations.Run(f.ctx, f.url, "down"); err != nil || version != 5 {
 			t.Fatalf("auth down: %d %v", version, err)
 		}
@@ -342,7 +343,7 @@ func TestCancellationMigration(t *testing.T) {
 	}
 	up := func() {
 		t.Helper()
-		if version, err := migrations.Run(f.ctx, f.url, "up"); err != nil || version != 6 {
+		if version, err := migrations.Run(f.ctx, f.url, "up"); err != nil || version != 7 {
 			t.Fatalf("up: %d %v", version, err)
 		}
 	}
@@ -375,6 +376,7 @@ func TestCancellationMigration(t *testing.T) {
 		t.Fatal(err)
 	}
 	confirmedStay(t, f, f.input, f.nextKey())
+	f.downToAuthSessions()
 	if version, downErr := migrations.Run(f.ctx, f.url, "down"); downErr != nil || version != 5 {
 		t.Fatalf("auth down before destructive check: %d %v", version, downErr)
 	}
@@ -631,6 +633,7 @@ func TestCancellationDowngradeRace(t *testing.T) {
 	f := newBookingFixture(t, 1)
 	f.enroll(f.typ.ID, true)
 	a := confirmedStay(t, f, f.input, f.nextKey())
+	f.downToAuthSessions()
 	if version, downErr := migrations.Run(f.ctx, f.url, "down"); downErr != nil || version != 5 {
 		t.Fatalf("auth down before race: %d %v", version, downErr)
 	}

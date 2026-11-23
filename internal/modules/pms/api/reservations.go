@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -8,6 +9,20 @@ import (
 	"github.com/chuxorg/chux-hosp-platform/internal/modules/pms/application"
 	"github.com/chuxorg/chux-hosp-platform/internal/modules/pms/domain"
 )
+
+type operatorRefKey struct{}
+
+// WithOperatorRef passes the operator verified by the application boundary.
+func WithOperatorRef(r *http.Request, operatorRef string) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), operatorRefKey{}, operatorRef))
+}
+
+func operatorRef(r *http.Request, submitted string) string {
+	if verified, ok := r.Context().Value(operatorRefKey{}).(string); ok {
+		return verified
+	}
+	return submitted
+}
 
 func registerReservations(mux *http.ServeMux, s *application.ReservationService) {
 	registerCancellations(mux, s)
@@ -74,6 +89,7 @@ func registerReservations(mux *http.ServeMux, s *application.ReservationService)
 			fail(w, application.ErrInvalid)
 			return
 		}
+		in.OperatorRef = operatorRef(r, in.OperatorRef)
 		result, replay, err := s.Confirm(r.Context(), p, keys[0], in)
 		if err != nil {
 			reservationFail(w, err)
