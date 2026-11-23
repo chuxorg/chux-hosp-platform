@@ -36,20 +36,26 @@ type AuthStore interface {
 }
 
 type Handler struct {
+	routes   http.Handler
 	store    AuthStore
 	provider IdentityProvider
 	config   Config
 	now      func() time.Time
 }
 
-func NewHandler(store AuthStore, provider IdentityProvider, config Config) http.Handler {
+func NewHandler(store AuthStore, provider IdentityProvider, config Config) *Handler {
 	h := &Handler{store: store, provider: provider, config: config, now: time.Now}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /login", h.login)
 	mux.HandleFunc("GET /callback", h.callback)
 	mux.HandleFunc("GET /session", h.currentSession)
 	mux.HandleFunc("POST /logout", h.logout)
-	return securityHeaders(mux)
+	h.routes = securityHeaders(mux)
+	return h
+}
+
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.routes.ServeHTTP(w, r)
 }
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {

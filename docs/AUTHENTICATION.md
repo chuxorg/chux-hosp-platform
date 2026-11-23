@@ -1,5 +1,30 @@
 # Auth0 OIDC browser authentication — Issue #49
 
+## Property authorization (Issue #51)
+
+With authentication enabled, Platform checks the current session and requires
+an explicit property grant in the same group as the user's permission.
+Reservation confirmation requires `reservation.create`. Reservation and
+cancellation lookup require `reservation.read`. Cancellation requires
+`reservation.cancel`. Both POST operations also require the session CSRF token.
+Platform supplies the operator reference from the authenticated user ID.
+All other PMS routes remain denied in auth-enabled mode.
+
+On the Mac, apply migrations through version 7 and use a disposable synthetic
+database. As a test fixture, create a group and a role in
+`platform_access_groups` and `platform_access_roles`; add the provisioned
+test identity to `platform_group_memberships` and assign the role in
+`platform_group_role_assignments`. Add the three permissions above in
+`platform_role_permissions` and grant one seeded property's ID as resource
+type `property` in `platform_group_resource_grants`. The integration test
+`property permissions require a same-group grant` contains fixture SQL.
+
+Sign in and check lookup, confirmation, and cancellation on that property
+using synthetic reservations. Confirm the same session gets 403 on another
+property, and that removing the grant denies the next request without a new
+login. Check a mutation without the CSRF header returns 403 and a session
+lookup after logout returns 401.
+
 This is the authentication-only BFF foundation accepted in ADR-0005. It proves
 identity and maintains an opaque PostgreSQL-backed browser session. It does not
 grant a role, resource, property or PMS permission. Keep existing PMS APIs in a

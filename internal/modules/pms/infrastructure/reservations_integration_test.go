@@ -48,7 +48,7 @@ func newBookingFixture(t *testing.T, n int) *bookingFixture {
 	url, pool := openIsolatedPMSDatabase(t)
 	ctx := context.Background()
 	latest, err := migrations.Run(ctx, url, "up")
-	if err != nil || latest != 6 {
+	if err != nil || latest != 7 {
 		t.Fatalf("migration %d: %v", latest, err)
 	}
 	f := &bookingFixture{t: t, ctx: ctx, url: url, pool: pool, store: NewStore(pool)}
@@ -63,6 +63,12 @@ func newBookingFixture(t *testing.T, n int) *bookingFixture {
 	day := time.Now().UTC().AddDate(0, 0, 40)
 	f.input = application.ConfirmReservation{RoomTypeID: f.typ.ID, GuestRef: "SYN-GUEST-1", OperatorRef: "SYN-OP-1", CheckIn: day.Format("2006-01-02"), CheckOut: day.AddDate(0, 0, 2).Format("2006-01-02"), ExpectedNightlyRateMinor: 12500, Currency: "THB"}
 	return f
+}
+func (f *bookingFixture) downToAuthSessions() {
+	f.t.Helper()
+	if v, err := migrations.Run(f.ctx, f.url, "down"); err != nil || v != 6 {
+		f.t.Fatalf("authorization rollback: %d %v", v, err)
+	}
 }
 func (f *bookingFixture) addType(name string, n int) domain.RoomType {
 	f.t.Helper()
@@ -133,12 +139,12 @@ func TestPooledReservationContract(t *testing.T) {
 		t.Fatalf("unenrolled: %v", e)
 	}
 	// Empty migration rollback/reapply must preserve previous catalog/rates.
-	for _, version := range []int64{5, 4, 3} {
+	for _, version := range []int64{6, 5, 4, 3} {
 		if v, e := migrations.Run(f.ctx, f.url, "down"); e != nil || v != version {
 			t.Fatalf("empty down: %d %v", v, e)
 		}
 	}
-	if v, e := migrations.Run(f.ctx, f.url, "up"); e != nil || v != 6 {
+	if v, e := migrations.Run(f.ctx, f.url, "up"); e != nil || v != 7 {
 		t.Fatalf("reapply: %d %v", v, e)
 	}
 	f.enroll(f.typ.ID, true)
@@ -202,6 +208,7 @@ func TestPooledReservationContract(t *testing.T) {
 	if _, _, e := f.service.Confirm(f.ctx, f.p.ID, failedKey, partial); e != nil {
 		t.Fatalf("failed key retained: %v", e)
 	}
+	f.downToAuthSessions()
 	if v, e := migrations.Run(f.ctx, f.url, "down"); e != nil || v != 5 {
 		t.Fatalf("auth rollback: %d %v", v, e)
 	}

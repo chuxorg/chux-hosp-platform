@@ -40,6 +40,7 @@ func registerCancellations(mux *http.ServeMux, s *application.ReservationService
 			return
 		}
 		location := "/pms/v1/properties/" + strconv.FormatInt(p, 10) + "/stay-reservations/" + strconv.FormatInt(id, 10) + "/cancellation"
+		input.OperatorRef = operatorRef(r, input.OperatorRef)
 		event, replay, err := s.Cancel(r.Context(), p, id, keys[0], input)
 		if err != nil {
 			if errors.Is(err, application.ErrAlreadyCancelled) {

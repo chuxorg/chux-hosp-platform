@@ -181,6 +181,9 @@ func TestPostgresLifecycle(t *testing.T) {
 		if _, err := store.Authenticate(ctx, sessionHash, time.Hour, true); !errors.Is(err, platformauth.ErrNotFound) {
 			t.Fatal("revoked user retained an active session")
 		}
+		if v, err := migrations.Run(ctx, databaseURL, "down"); err != nil || v != 6 {
+			t.Fatalf("empty authorization rollback: version=%d err=%v", v, err)
+		}
 		if v, err := migrations.Run(ctx, databaseURL, "down"); err == nil || v != 0 {
 			t.Fatalf("populated authentication rollback was not refused: version=%d err=%v", v, err)
 		}
@@ -190,6 +193,43 @@ func TestPostgresLifecycle(t *testing.T) {
 		if _, err := pool.Exec(ctx, `DELETE FROM platform_users`); err != nil {
 			t.Fatal("remove isolated authentication fixture:", err)
 		}
+		if v, err := migrations.Run(ctx, databaseURL, "up"); err != nil || v != migrationVersion {
+			t.Fatalf("restore authorization migration: version=%d err=%v", v, err)
+		}
+	})
+	t.Run("property permissions require a same-group grant", func(t *testing.T) {
+		store := platformauth.NewStore(pool)
+		userID, err := store.ProvisionUser(ctx, "https://tenant.example/", "auth0|policy-fixture", "Synthetic Operator")
+		if err != nil {
+			t.Fatal(err)
+		}
+		exec := func(query string, args ...any) {
+			t.Helper()
+			if _, err := pool.Exec(ctx, query, args...); err != nil {
+				t.Fatal(err)
+			}
+		}
+		check := func(propertyID int64, permission string, want bool) {
+			t.Helper()
+			got, err := store.AllowsProperty(ctx, userID, propertyID, permission)
+			if err != nil || got != want {
+				t.Fatalf("property %d permission %q: allowed=%t want=%t err=%v", propertyID, permission, got, want, err)
+			}
+		}
+		exec("INSERT INTO platform_access_groups (name) VALUES ('operator'), ('other')")
+		exec("INSERT INTO platform_access_roles (name) VALUES ('fixture')")
+		exec("INSERT INTO platform_group_memberships SELECT id, $1 FROM platform_access_groups", userID)
+		exec("INSERT INTO platform_group_role_assignments SELECT g.id, $1, r.id FROM platform_access_groups g CROSS JOIN platform_access_roles r WHERE g.name='operator'", userID)
+		exec("INSERT INTO platform_role_permissions SELECT id, 'reservation.read' FROM platform_access_roles")
+		exec("INSERT INTO platform_group_resource_grants SELECT id, 'property', 22 FROM platform_access_groups WHERE name='other'")
+		check(22, "reservation.read", false)
+		exec("INSERT INTO platform_group_resource_grants SELECT id, 'property', 11 FROM platform_access_groups WHERE name='operator'")
+		check(11, "reservation.read", true)
+		check(11, "reservation.cancel", false)
+		check(22, "reservation.read", false)
+		exec("DELETE FROM platform_group_resource_grants WHERE resource_id=11")
+		check(11, "reservation.read", false)
+		exec("DELETE FROM platform_group_resource_grants; DELETE FROM platform_group_memberships; DELETE FROM platform_role_permissions; DELETE FROM platform_access_roles; DELETE FROM platform_access_groups; DELETE FROM platform_users")
 	})
 	t.Run("migration rollback and reapply", func(t *testing.T) {
 		v, err := migrations.Run(ctx, databaseURL, "down")
